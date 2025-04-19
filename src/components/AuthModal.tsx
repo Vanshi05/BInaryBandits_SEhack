@@ -11,7 +11,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { emailSignIn, emailSignUp } from "@/Backend/firebase.ts"
+import { emailSignIn, emailSignUp } from "@/Backend/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,7 +54,7 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
     try {
       await emailSignIn(form.loginEmail, form.loginPassword);
       onClose();
-      navigate('/dashboard');
+      navigate('/channel'); // Changed from '/dashboard' to '/channel'
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -70,7 +70,7 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
     try {
       await emailSignUp(form.signupEmail, form.signupPassword);
       onClose();
-      navigate('/dashboard');
+      navigate('/dashboard'); // Changed from '/dashboard' to '/channel'
     } catch (err: any) {
       setError(err.message);
     } finally {
