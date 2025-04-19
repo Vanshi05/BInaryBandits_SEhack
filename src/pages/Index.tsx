@@ -1,282 +1,299 @@
-
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { NavHeader } from "@/components/nav-header";
+import { TrustCard } from "@/components/trust-card";
+import { Counter } from "@/components/ui/counter-animation";
 import { Link } from "react-router-dom";
-import { CalendarDays, CheckCircle2, Camera, ArrowRight } from "lucide-react";
+import { CategoryCard } from "@/components/category-card";
+import { CardGrid } from "@/components/card-grid/CardGrid";
+import { Wrench, BookOpen, Laptop, Tent, Car, Music, Camera, Briefcase } from "lucide-react";
+import CardSlider from "@/components/CardSlider/CardSlider";
 
 const categories = [
   {
-    name: "Tools",
-    count: 42,
-    image: "https://images.unsplash.com/photo-1581090464777-f3220bbe1b8b?auto=format&fit=crop&w=600&q=80",
-    emoji: "🔧" 
+    title: "Tools & DIY",
+    itemCount: 845,
+    icon: Wrench,
+    bgColor: "bg-[#FFF5F1]",
+    iconColor: "text-orange-500",
+    to: "/browse/tools"
   },
   {
-    name: "Books",
-    count: 67,
-    image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=600&q=80",
-    emoji: "📚"
+    title: "Books & Media",
+    itemCount: 1203,
+    icon: BookOpen,
+    bgColor: "bg-[#F1F5FF]",
+    iconColor: "text-blue-500",
+    to: "/browse/books"
   },
   {
-    name: "Gadgets",
-    count: 35,
-    image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=600&q=80",
-    emoji: "📱"
+    title: "Electronics",
+    itemCount: 752,
+    icon: Laptop,
+    bgColor: "bg-[#F9F1FF]",
+    iconColor: "text-purple-500",
+    to: "/browse/electronics"
   },
   {
-    name: "Party Gear",
-    count: 24,
-    image: "https://images.unsplash.com/photo-1487887235947-a955ef187fcc?auto=format&fit=crop&w=600&q=80",
-    emoji: "🎉"
+    title: "Outdoor Gear",
+    itemCount: 630,
+    icon: Tent,
+    bgColor: "bg-[#F1FFF5]",
+    iconColor: "text-green-500",
+    to: "/browse/outdoor"
+  },
+  {
+    title: "Vehicles",
+    itemCount: 145,
+    icon: Car,
+    bgColor: "bg-[#FFF1F5]",
+    iconColor: "text-pink-500",
+    to: "/browse/vehicles"
+  },
+  {
+    title: "Musical Instruments",
+    itemCount: 386,
+    icon: Music,
+    bgColor: "bg-[#FFFFF1]",
+    iconColor: "text-yellow-600",
+    to: "/browse/music"
+  },
+  {
+    title: "Photography",
+    itemCount: 294,
+    icon: Camera,
+    bgColor: "bg-[#F1F5FF]",
+    iconColor: "text-blue-500",
+    to: "/browse/photography"
+  },
+  {
+    title: "Business Equipment",
+    itemCount: 418,
+    icon: Briefcase,
+    bgColor: "bg-[#F1FFF9]",
+    iconColor: "text-teal-500",
+    to: "/browse/business"
   }
 ];
 
-const testimonials = [
+const featuredItems = [
   {
-    name: "Priya K.",
-    avatar: "https://randomuser.me/api/portraits/women/12.jpg",
-    rating: 5,
-    quote: "Rented a drill for my shelf - saved me $80!"
+    id: "camera-001",
+    title: "Professional DSLR Camera",
+    description: "Perfect for weekend photoshoots or special events. Includes two lenses and a carrying case.",
+    image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
+    link: {
+      text: "Borrow Now",
+      url: "/item/camera-001"
+    }
   },
   {
-    name: "Marco L.",
-    avatar: "https://randomuser.me/api/portraits/men/17.jpg",
-    rating: 4,
-    quote: "Found a projector for movie night, super easy pickup."
+    id: "bike-001",
+    title: "Mountain Bike",
+    description: "Well-maintained mountain bike, perfect for weekend adventures. Helmet included.",
+    image: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05",
+    link: {
+      text: "Borrow Now",
+      url: "/item/bike-001"
+    }
   },
   {
-    name: "Sarah J.",
-    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-    rating: 5,
-    quote: "Borrowed camping gear for the weekend. Well maintained!"
+    id: "tent-001",
+    title: "Camping Gear Set",
+    description: "Complete camping set including tent, sleeping bags, and cooking equipment.",
+    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+    link: {
+      text: "Borrow Now",
+      url: "/item/tent-001"
+    }
+  },
+  {
+    id: "laptop-001",
+    title: "MacBook Pro",
+    description: "Latest model MacBook Pro, perfect for creative work or programming projects.",
+    image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d",
+    link: {
+      text: "Borrow Now",
+      url: "/item/laptop-001"
+    }
+  },
+  {
+    id: "drone-001",
+    title: "Professional Drone",
+    description: "DJI Mavic Air 2 with 4K camera. Perfect for aerial photography and videography.",
+    image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e",
+    link: {
+      text: "Borrow Now",
+      url: "/item/drone-001"
+    }
+  },
+  {
+    id: "tools-001",
+    title: "Power Tools Set",
+    description: "Complete set of power tools including drill, saw, and sander. Perfect for DIY projects.",
+    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158",
+    link: {
+      text: "Borrow Now",
+      url: "/item/tools-001"
+    }
   }
 ];
 
 const Index = () => {
+  const gridCards = [
+    { 
+      title: "Tools & Equipment", 
+      size: "medium" as const,
+    },
+    { 
+      title: "Electronics & Gadgets", 
+      size: "small" as const,
+    },
+    { 
+      title: "Outdoor & Adventure", 
+      size: "medium" as const,
+    },
+    { 
+      title: "Books & Media", 
+      size: "small" as const,
+    },
+    { 
+      title: "Musical Instruments", 
+      size: "medium" as const,
+    },
+    { 
+      title: "Photography Gear", 
+      size: "small" as const,
+    },
+    { 
+      title: "Sports Equipment", 
+      size: "medium" as const,
+    },
+    { 
+      title: "Home & Garden", 
+      size: "small" as const,
+    }
+  ];
+
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-secondary/10 to-primary/10 pt-16 md:pt-24 pb-20">
-        <div className="container px-4 md:px-6">
-          <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
-            <div className="flex flex-col justify-center space-y-4">
-              <div className="space-y-2">
-                <h1 className="text-3xl md:text-5xl font-bold tracking-tighter">
-                  Share More, Waste Less
-                </h1>
-                <p className="text-xl text-muted-foreground">
-                  Borrow everyday items from neighbors in your community
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button size="lg" asChild>
-                  <Link to="/search">Browse Items</Link>
+    <div className="min-h-screen bg-soft-white">
+      <NavHeader />
+      
+      <section className="relative min-h-[600px] flex items-center">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSe0lMxqbuYNDEzThRPXCFFhk2aDK4PhwKLNybqm8Caq52YOIGg"
+            alt="Gradient background"
+            className="w-full h-full object-cover"
+          />
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className="max-w-xl">
+              <h1 className="text-5xl font-bold font-plus-jakarta leading-tight mb-6 text-navy">
+                Share Resources,<br />Build Community
+              </h1>
+              <p className="text-xl text-navy mb-8">
+                Borrow what you need, share what you have. Join our community of conscious consumers making a difference, one share at a time.
+              </p>
+              <div className="flex gap-4">
+                <Button size="lg" className="bg-sage hover:bg-navy text-warm-cream" asChild>
+                  <Link to="/browse">Start Browsing</Link>
                 </Button>
-                <Button variant="outline" size="lg">
-                  List an Item
+                <Button size="lg" className="bg-sage hover:bg-navy text-warm-cream" asChild>
+                  <Link to="/share">Share an Item</Link>
                 </Button>
               </div>
             </div>
-            <div className="relative">
-              <div className="relative h-[350px] md:h-[400px] lg:h-[500px] w-full overflow-hidden rounded-lg">
-                <img
-                  alt="Community sharing illustration"
-                  className="absolute inset-0 object-cover w-full h-full"
-                  src="https://images.unsplash.com/photo-1487887235947-a955ef187fcc?auto=format&fit=crop&w=1200&q=80"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-background/20"></div>
-                <div className="absolute bottom-4 left-4 right-4 p-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Trusted Community</p>
-                      <p className="text-sm text-muted-foreground">Join 5,000+ members sharing locally</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="hidden md:block">
+              <img
+                src="https://static.superwahm.com/wp-content/uploads/2021/04/Home-Office-Setup-Desk-Chair-and-Bookcase.jpg"
+                alt="Modern workspace setup"
+                className="rounded-lg shadow-2xl w-full h-auto"
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-12 md:py-16 bg-white">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">
-              How BorrowBuddy Works
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold font-soria text-navy mb-4">
+              Browse by Category
             </h2>
-            <p className="text-muted-foreground">Simple steps to borrow or lend items in your community</p>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center text-center">
-              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mb-4">
-                <Camera className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-medium text-lg mb-2">List</h3>
-              <p className="text-muted-foreground">
-                Snap photos & set availability for items you're willing to share
-              </p>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mb-4">
-                <CalendarDays className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-medium text-lg mb-2">Book</h3>
-              <p className="text-muted-foreground">
-                Reserve with secure payments and verified profiles
-              </p>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mb-4">
-                <CheckCircle2 className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-medium text-lg mb-2">Share</h3>
-              <p className="text-muted-foreground">
-                Meetup for doorstep pickup and return when you're done
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Categories */}
-      <section className="py-12 md:py-16 bg-muted/30">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">
-                Browse Categories
-              </h2>
-              <p className="text-muted-foreground">Find what you need from a variety of categories</p>
-            </div>
-            <Button variant="link" asChild className="hidden md:flex mt-4 md:mt-0">
-              <Link to="/search" className="flex items-center">
-                View all categories <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {categories.map(category => (
-              <Link key={category.name} to="/search">
-                <Card className="overflow-hidden h-full transition-all hover:shadow-md">
-                  <div className="relative aspect-video">
-                    <div className="absolute inset-0 flex items-center justify-center text-4xl bg-gradient-to-br from-primary/10 to-secondary/10">
-                      {category.emoji}
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium">{category.name}</h3>
-                      <span className="text-sm text-muted-foreground">{category.count} items</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-          <div className="flex md:hidden justify-center mt-6">
-            <Button variant="link" asChild>
-              <Link to="/search" className="flex items-center">
-                View all categories <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-12 md:py-16 bg-white">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">
-              What Our Community Says
-            </h2>
-            <p className="text-muted-foreground">Read about experiences from borrowers and lenders</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((testimonial, idx) => (
-              <Card key={idx} className="relative overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="absolute top-4 right-4 flex">
-                    {Array(5).fill(0).map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`h-4 w-4 ${i < testimonial.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <div className="flex items-center space-x-4 mb-4 mt-2">
-                    <img
-                      src={testimonial.avatar}
-                      alt={testimonial.name}
-                      className="rounded-full h-12 w-12"
-                    />
-                    <div>
-                      <p className="font-medium">{testimonial.name}</p>
-                    </div>
-                  </div>
-                  <p className="italic">{testimonial.quote}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-12 md:py-16 bg-gradient-to-br from-primary/10 to-secondary/10">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center text-center">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">
-              Ready to Join the Sharing Economy?
-            </h2>
-            <p className="text-muted-foreground max-w-[600px] mb-6">
-              Start borrowing or lending items today. Save money, reduce waste, and connect with your community.
+            <p className="text-lg text-sage max-w-2xl mx-auto">
+              Discover a wide range of items available in our sharing community
             </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button size="lg" asChild>
-                <Link to="/search">Browse Items</Link>
-              </Button>
-              <Button variant="outline" size="lg">
-                List Your First Item
-              </Button>
+          </div>
+          
+          <CardGrid cards={gridCards} />
+        </div>
+      </section>
+
+      <section className="py-16 bg-soft-gray">
+        <CardSlider
+          title="Featured Items"
+          subtitle="Discover our most popular items available for borrowing"
+          items={featuredItems}
+          autoSlide={true}
+          interval={5000}
+          visibleCards={{ mobile: 1, tablet: 2, desktop: 3 }}
+        />
+      </section>
+
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div className="space-y-2">
+              <Counter end={5000} className="text-4xl font-bold text-navy" />
+              <p className="text-sage">Items Shared</p>
+            </div>
+            <div className="space-y-2">
+              <Counter end={2500} className="text-4xl font-bold text-navy" />
+              <p className="text-sage">Active Members</p>
+            </div>
+            <div className="space-y-2">
+              <Counter end={15000} className="text-4xl font-bold text-navy" />
+              <p className="text-sage">Successful Rentals</p>
+            </div>
+            <div className="space-y-2">
+              <Counter end={4.9} duration={1500} className="text-4xl font-bold text-navy" />
+              <p className="text-sage">Average Rating</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-muted py-6">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-4 md:mb-0">
-              <p className="text-sm text-muted-foreground">© 2025 BorrowBuddy. All rights reserved.</p>
+      <section className="py-16 bg-soft-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl font-bold font-plus-jakarta mb-6 text-dark-brown">Our Story & Impact</h2>
+              <p className="text-warm-brown mb-8">
+                Discover how our sharing community is making a real difference in 
+                reducing waste, lowering carbon emissions, and building stronger 
+                connections between people.
+              </p>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-warm-brown text-warm-brown hover:bg-warm-brown hover:text-soft-white"
+                asChild
+              >
+                <Link to="/impact">See Our Impact</Link>
+              </Button>
             </div>
-            <div className="flex space-x-6">
-              <Link to="#" className="text-sm text-muted-foreground hover:text-foreground">
-                About
-              </Link>
-              <Link to="#" className="text-sm text-muted-foreground hover:text-foreground">
-                Terms
-              </Link>
-              <Link to="#" className="text-sm text-muted-foreground hover:text-foreground">
-                Privacy
-              </Link>
-              <Link to="#" className="text-sm text-muted-foreground hover:text-foreground">
-                Support
-              </Link>
+            <div className="grid gap-6">
+              <TrustCard 
+                rating={4.9}
+                transactions={156}
+                memberSince="Jan 2024"
+              />
             </div>
           </div>
         </div>
-      </footer>
+      </section>
     </div>
   );
 };
