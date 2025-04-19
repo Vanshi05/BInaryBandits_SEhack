@@ -12,460 +12,319 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ImageGallery } from "@/components/image-gallery";
-import { ItemFeatures } from "@/components/item-features";
 import { OwnerInfo } from "@/components/owner-info";
+import { doc, getDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/Backend/firebase";
+import { useAuth } from "@/hooks/useAuth";
+import { NavHeader } from "@/components/nav-header";
+import { addDoc, collection } from "firebase/firestore";
+import { Label } from "@/components/ui/label";
+import { updateDoc } from "firebase/firestore";
 
-// Extended database of items to match all items from Browse page
-export const itemsDatabase: Record<string, {
+interface ItemData {
+  id: string;
   title: string;
   description: string;
   price: number;
-  distance: string;
-  features: string[];
+  category: string;
+  location: string;
   images: string[];
-}> = {
-  // Tools & Equipment category
-  "tools-001": {
-    title: "Professional Power Drill",
-    description: "High-quality power drill with adjustable settings and long battery life",
-    price: 15,
-    distance: "2.5 km",
-    features: [
-      "Variable speed control",
-      "Rechargeable lithium-ion battery",
-      "Multiple torque settings",
-      "Forward and reverse functionality"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "tools-002": {
-    title: "Garden Tools Set",
-    description: "Complete set of gardening tools including spade, rake, and pruning shears",
-    price: 20,
-    distance: "1.2 km",
-    features: [
-      "Ergonomic handles",
-      "Durable stainless steel construction",
-      "Includes storage bag",
-      "Suitable for all garden types"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "tools-003": {
-    title: "Electric Chainsaw",
-    description: "Powerful electric chainsaw perfect for yard maintenance and tree trimming",
-    price: 30,
-    distance: "3.8 km",
-    features: [
-      "14-inch cutting bar",
-      "Auto-oiling system",
-      "Tool-free chain tensioning",
-      "Safety brake system"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-
-  // Electronics & Gadgets category
-  "camera-001": {
-    title: "Professional DSLR Camera",
-    description: "Professional grade DSLR camera perfect for photography enthusiasts. Includes multiple lenses and a carrying case.",
-    price: 45,
-    distance: "2.4 km",
-    features: [
-      "24.2MP APS-C CMOS Sensor",
-      "3.0\" 921k-Dot Vari-Angle LCD Monitor",
-      "Full HD 1080p Video Recording at 60 fps",
-      "Includes 18-55mm Lens"
-    ],
-    images: ["https://images.unsplash.com/photo-1488590528505-98d2b5aba04b", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "projector-001": {
-    title: "HD Projector",
-    description: "High-definition projector perfect for movie nights and presentations",
-    price: 40,
-    distance: "1.5 km",
-    features: [
-      "1080p Full HD Resolution",
-      "3500 Lumens Brightness",
-      "Built-in Speaker",
-      "Multiple Input Options"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "electronics-001": {
-    title: "Gaming Console",
-    description: "Latest gaming console with two controllers and popular games",
-    price: 35,
-    distance: "1.7 km",
-    features: [
-      "4K Gaming Support",
-      "1TB Storage",
-      "Wireless Controllers",
-      "Built-in Wi-Fi"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "electronics-002": {
-    title: "Bluetooth Speaker",
-    description: "Powerful wireless speaker with excellent sound quality and long battery life",
-    price: 25,
-    distance: "1.9 km",
-    features: [
-      "360° Sound",
-      "Waterproof Design",
-      "12-hour Battery Life",
-      "Voice Assistant Compatible"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  
-  // Outdoor & Adventure category
-  "tent-001": {
-    title: "Camping Tent",
-    description: "4-person camping tent, easy to set up and waterproof. Perfect for weekend getaways.",
-    price: 35,
-    distance: "3.2 km",
-    features: [
-      "Sleeps 4 people comfortably",
-      "Waterproof material",
-      "UV protection",
-      "Includes carrying bag"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "kayak-001": {
-    title: "Two-Person Kayak",
-    description: "Stable and durable kayak, includes paddles and life vests",
-    price: 50,
-    distance: "4.1 km",
-    features: [
-      "Stable Design for Beginners",
-      "Includes 2 Paddles",
-      "2 Life Vests Included",
-      "Maximum Weight Capacity: 400 lbs"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "outdoor-001": {
-    title: "Hiking Backpack",
-    description: "65L hiking backpack with rain cover. Perfect for multi-day treks.",
-    price: 25,
-    distance: "3.0 km",
-    features: [
-      "65L Capacity",
-      "Internal Frame Support",
-      "Multiple Compartments",
-      "Integrated Rain Cover"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  
-  // Books & Media category
-  "book-001": {
-    title: "Book Collection",
-    description: "Collection of bestselling novels, perfect for a reading retreat",
-    price: 10,
-    distance: "0.8 km",
-    features: [
-      "20+ Bestselling Titles",
-      "Various Genres",
-      "Hardcover and Paperback Options",
-      "Adult and Young Adult Selection"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "book-002": {
-    title: "Film Collection",
-    description: "Classic movie collection with over 50 timeless films on Blu-ray",
-    price: 15,
-    distance: "1.5 km",
-    features: [
-      "50+ Classic Films",
-      "Blu-ray Format",
-      "Special Edition Versions",
-      "Behind-the-Scenes Content"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "book-003": {
-    title: "Vinyl Record Collection",
-    description: "Curated collection of vintage vinyl records from the 60s and 70s",
-    price: 25,
-    distance: "2.2 km",
-    features: [
-      "Original Pressings",
-      "Classic Rock and Jazz",
-      "Well Maintained",
-      "50+ Albums"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  
-  // Musical Instruments category
-  "guitar-001": {
-    title: "Electric Guitar",
-    description: "Fender Stratocaster with amp and accessories. Perfect for aspiring musicians.",
-    price: 40,
-    distance: "2.8 km",
-    features: [
-      "Fender Stratocaster Model",
-      "20W Practice Amp Included",
-      "Cable and Strap Included",
-      "Tuner and Picks Included"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "music-001": {
-    title: "Digital Piano",
-    description: "88-key weighted digital piano with stand and sustain pedal",
-    price: 45,
-    distance: "3.1 km",
-    features: [
-      "88 Weighted Keys",
-      "Adjustable Touch Sensitivity",
-      "Built-in Speakers",
-      "Multiple Sound Options"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "music-002": {
-    title: "Drum Kit",
-    description: "Complete acoustic drum set with cymbals and hardware",
-    price: 50,
-    distance: "3.5 km",
-    features: [
-      "5-Piece Shell Pack",
-      "Hi-Hat and Crash Cymbal",
-      "Adjustable Throne",
-      "Bass Pedal Included"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  
-  // Photography category
-  "camera-002": {
-    title: "Photography Lighting Set",
-    description: "Professional studio lighting equipment for photography",
-    price: 30,
-    distance: "3.5 km",
-    features: [
-      "3-Point Lighting Setup",
-      "Adjustable Brightness",
-      "Softboxes Included",
-      "Portable Carrying Case"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "photo-001": {
-    title: "Mirrorless Camera",
-    description: "High-end mirrorless camera with 4K video capabilities",
-    price: 50,
-    distance: "2.8 km",
-    features: [
-      "24MP Sensor",
-      "4K Video Recording",
-      "Electronic Viewfinder",
-      "Wi-Fi and Bluetooth"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "photo-002": {
-    title: "Camera Lens Collection",
-    description: "Set of professional lenses including wide angle, portrait, and telephoto options",
-    price: 45,
-    distance: "3.2 km",
-    features: [
-      "Wide Angle (24mm)",
-      "Standard (50mm)",
-      "Telephoto (200mm)",
-      "Macro Lens"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  
-  // Sports Equipment category
-  "bike-001": {
-    title: "Mountain Bike",
-    description: "High-quality mountain bike perfect for weekend adventures. Well-maintained with recent service.",
-    price: 25,
-    distance: "1.8 km",
-    features: [
-      "Front suspension",
-      "Disc brakes",
-      "21-speed gearing",
-      "Includes helmet and lock"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "sports-001": {
-    title: "Tennis Racket Set",
-    description: "Professional tennis racket set with balls and carrying case.",
-    price: 15,
-    distance: "2.1 km",
-    features: [
-      "2 Professional-grade Rackets",
-      "6 Tennis Balls",
-      "Carrying Case",
-      "Grip Tape"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "sports-002": {
-    title: "Golf Club Set",
-    description: "Complete set of golf clubs with bag, ideal for beginners and intermediate players",
-    price: 35,
-    distance: "2.9 km",
-    features: [
-      "Full Set of Irons",
-      "Driver and Woods",
-      "Putter",
-      "Golf Bag Included"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  
-  // Home & Garden category
-  "home-001": {
-    title: "Pressure Washer",
-    description: "Powerful pressure washer perfect for cleaning driveways, decks, and exteriors",
-    price: 30,
-    distance: "1.4 km",
-    features: [
-      "2000 PSI",
-      "Multiple Nozzle Tips",
-      "25 ft Hose",
-      "Detergent Tank"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "home-002": {
-    title: "Carpet Cleaner",
-    description: "Professional-grade carpet cleaner with upholstery attachments",
-    price: 25,
-    distance: "1.6 km",
-    features: [
-      "Deep Cleaning Technology",
-      "Large Capacity Tank",
-      "Upholstery Attachments",
-      "Pet Stain Removal"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  },
-  "home-003": {
-    title: "Outdoor Furniture Set",
-    description: "Elegant patio furniture set perfect for hosting garden parties",
-    price: 45,
-    distance: "2.0 km",
-    features: [
-      "Table and 6 Chairs",
-      "Weather-resistant Materials",
-      "Umbrella Included",
-      "Easy Assembly"
-    ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-  }
-};
-
-// Mock user rentals data
-export const userRentals = {
-  items: ["bike-001"] // Initially rented items
-};
+  status: string;
+  userId: string;
+  createdAt: any;
+  updatedAt: any;
+}
 
 const ItemDetail = () => {
-  const { id } = useParams<{id: string}>();
+  const { id } = useParams<{ id: string }>();
+  const [itemData, setItemData] = useState<ItemData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [endDate, setEndDate] = useState<Date | undefined>();
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
 
-  // If no id is provided or id doesn't exist in database, show not found
-  if (!id || !itemsDatabase[id]) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">Item Not Found</h1>
-        <p className="text-gray-600">The requested item does not exist or has been removed.</p>
-      </div>
-    );
-  }
+  // Fetch item data from Firestore
+  useEffect(() => {
+    const fetchItemData = async () => {
+      if (!id) return;
 
-  // Get item data based on ID parameter
-  const itemData = itemsDatabase[id];
+      try {
+        setLoading(true);
+        const docRef = doc(db, "listings", id);
+        const docSnap = await getDoc(docRef);
 
-  const handleConfirmBooking = () => {
-    setOpen(false);
-    // Add the current item to user rentals if not already present
-    if (!userRentals.items.includes(id)) {
-      userRentals.items.push(id);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setItemData({
+            id: docSnap.id,
+            title: data.title || "Untitled",
+            description: data.description || "",
+            price: data.price || 0,
+            category: data.category || "other",
+            location: data.location || "Unknown location",
+            images: data.images || [],
+            status: data.status || "available",
+            userId: data.userId,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt
+          });
+        } else {
+          setError('Item not found');
+        }
+      } catch (err) {
+        setError('Failed to fetch item data');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchItemData();
+  }, [id]);
+
+  // Update end date when start date changes
+  useEffect(() => {
+    if (date) {
+      const newEndDate = new Date(date);
+      newEndDate.setDate(newEndDate.getDate() + 1); // Default 1 day rental
+      setEndDate(newEndDate);
     }
-    toast("Booking Confirmed", {
-      description: (
-        <div className="space-y-1">
-          <div>💚 12 items reused by you</div>
-          <div>♻️ 3.5kg carbon saved this month</div>
-        </div>
-      )
-    });
+  }, [date]);
+
+  const handleConfirmBooking = async () => {
+    try {
+      if (!user || !date || !endDate || !itemData) return;
+
+      // Calculate total price
+      const days = Math.ceil((endDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+      const totalPrice = days * itemData.price;
+
+      // Create rental document
+      await addDoc(collection(db, "rentals"), {
+        listingId: itemData.id,
+        renterId: user.uid,
+        ownerId: itemData.userId,
+        startDate: date,
+        endDate: endDate,
+        totalPrice: totalPrice,
+        status: "confirmed",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      // Update listing status
+      await updateDoc(doc(db, "listings", itemData.id), {
+        status: "rented",
+        updatedAt: serverTimestamp()
+      });
+
+      setOpen(false);
+      toast("Booking Confirmed", {
+        description: `You've successfully booked ${itemData.title} for ${days} day(s)`
+      });
+
+    } catch (error) {
+      toast("Booking Failed", {
+        description: error instanceof Error ? error.message : "Could not complete booking",
+        variant: "destructive"
+      });
+      console.error("Booking error:", error);
+    }
   };
 
   // Calculate minimum selectable date (today)
   const minSelectableDate = new Date();
-  // Set time to start of day to avoid time zone issues
   minSelectableDate.setHours(0, 0, 0, 0);
 
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <p>Loading item details...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">Item Not Found</h1>
+        <p className="text-gray-600">{error}</p>
+      </div>
+    );
+  }
+
+  if (!itemData) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div>
-          <ImageGallery images={itemData.images} title={itemData.title} />
-        </div>
-        
-        <div className="space-y-6">
+    <>
+      <NavHeader />
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h1 className="text-3xl font-bold">{itemData.title}</h1>
-            <p className="text-2xl font-semibold mt-2">${itemData.price}/day</p>
+            <ImageGallery
+              images={itemData.images.length > 0 ? itemData.images : ["/placeholder.svg"]}
+              title={itemData.title}
+            />
           </div>
-          
-          <p className="text-gray-600">{itemData.description}</p>
-          
-          <ItemFeatures features={itemData.features} />
 
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full">Book Now</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Book Item</DialogTitle>
-                <DialogDescription>
-                  Select your rental dates and confirm your booking.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  disabled={(date) => date < minSelectableDate}
-                  className="rounded-md border pointer-events-auto"
-                />
-                <Button 
-                  className="w-full" 
-                  onClick={handleConfirmBooking}
-                  disabled={!date}
-                >
-                  Confirm Booking
-                </Button>
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold">{itemData.title}</h1>
+              <div className="flex items-center gap-4 mt-2">
+                <p className="text-2xl font-semibold">₹{itemData.price}/day</p>
+                <span className="px-2 py-1 text-xs rounded-full bg-sage/20 text-sage">
+                  {itemData.category}
+                </span>
+                <span className="text-gray-500">
+                  {itemData.location}
+                </span>
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+              {itemData.status !== "available" && (
+                <div className="mt-2 text-red-500">
+                  Currently unavailable
+                </div>
+              )}
+            </div>
 
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold mb-6">About the Owner</h2>
-        <div className="max-w-md">
-          <OwnerInfo />
+            <p className="text-gray-600 whitespace-pre-line">
+              {itemData.description || "No description provided"}
+            </p>
+
+            {itemData.status === "available" ? (
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full">Book Now</Button>
+                </DialogTrigger>
+                // Update the DialogContent section with these calendar components
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Book Item</DialogTitle>
+                    <DialogDescription>
+                      Select your rental dates and confirm your booking.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm">Start Date</Label>
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          disabled={(date) => date < minSelectableDate}
+                          className="rounded-md border p-2"
+                          classNames={{
+                            months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                            month: "space-y-4",
+                            caption: "flex justify-center pt-1 relative items-center",
+                            caption_label: "text-sm font-medium",
+                            nav: "space-x-1 flex items-center",
+                            nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                            nav_button_previous: "absolute left-1",
+                            nav_button_next: "absolute right-1",
+                            table: "w-full border-collapse space-y-1",
+                            head_row: "flex",
+                            head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                            row: "flex w-full mt-2",
+                            cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+                            day_selected: "bg-sage text-primary-foreground hover:bg-sage hover:text-primary-foreground focus:bg-sage focus:text-primary-foreground rounded-full",
+                            day_today: "bg-accent text-accent-foreground",
+                            day_outside: "text-muted-foreground opacity-50",
+                            day_disabled: "text-muted-foreground opacity-50",
+                            day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                            day_hidden: "invisible",
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm">End Date</Label>
+                        <Calendar
+                          mode="single"
+                          selected={endDate}
+                          onSelect={setEndDate}
+                          disabled={(date) => !date || (date < (date || new Date()))}
+                          className="rounded-md border p-2"
+                          classNames={{
+                            // Same classNames as above for consistency
+                            months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                            month: "space-y-4",
+                            caption: "flex justify-center pt-1 relative items-center",
+                            caption_label: "text-sm font-medium",
+                            nav: "space-x-1 flex items-center",
+                            nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                            nav_button_previous: "absolute left-1",
+                            nav_button_next: "absolute right-1",
+                            table: "w-full border-collapse space-y-1",
+                            head_row: "flex",
+                            head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                            row: "flex w-full mt-2",
+                            cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+                            day_selected: "bg-sage text-primary-foreground hover:bg-sage hover:text-primary-foreground focus:bg-sage focus:text-primary-foreground rounded-full",
+                            day_today: "bg-accent text-accent-foreground",
+                            day_outside: "text-muted-foreground opacity-50",
+                            day_disabled: "text-muted-foreground opacity-50",
+                            day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                            day_hidden: "invisible",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Daily rate:</span>
+                        <span>₹{itemData.price}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Duration:</span>
+                        <span>
+                          {date && endDate ?
+                            Math.ceil((endDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)) + " days" :
+                            "Select dates"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between font-medium">
+                        <span className="text-gray-700">Total:</span>
+                        <span className="text-sage font-semibold">
+                          {date && endDate ?
+                            `₹${Math.ceil((endDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)) * itemData.price}` :
+                            "₹0"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      className="w-full mt-2"
+                      onClick={handleConfirmBooking}
+                      disabled={!date || !endDate || !user}
+                    >
+                      {!user ? 'Sign in to book' : 'Confirm Booking'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            ) : (
+              <Button className="w-full" disabled>
+                Currently Unavailable
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6">About the Owner</h2>
+          <div className="max-w-md">
+            <OwnerInfo userId={itemData.userId} />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -18,6 +18,8 @@ import { useState, useEffect } from "react"; // Added useEffect
 import { Image } from "lucide-react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/Backend/firebase";
+import { useNavigate } from "react-router-dom";
+
 
 const listingSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -31,6 +33,7 @@ const listingSchema = z.object({
 const ListItem = () => {
   const [images, setImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof listingSchema>>({
     resolver: zodResolver(listingSchema),
@@ -92,6 +95,7 @@ const ListItem = () => {
       });
     } finally {
       setIsSubmitting(false);
+      navigate("/dashboard");
     }
   }
 
