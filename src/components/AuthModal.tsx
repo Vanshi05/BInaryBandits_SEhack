@@ -1,6 +1,16 @@
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,11 +26,27 @@ interface AuthModalProps {
 const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
   const [tab, setTab] = useState<string>(initialTab);
   const [isLoading, setIsLoading] = useState(false);
+  const [form, setForm] = useState({
+    loginEmail: "",
+    loginPassword: "",
+    signupName: "",
+    signupEmail: "",
+    signupPassword: "",
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setForm((prevForm) => ({
+      ...prevForm,
+      [id]: value,
+    }));
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Mock login delay
+    console.log("Login Email:", form.loginEmail);
+    console.log("Login Password:", form.loginPassword);
     setTimeout(() => {
       setIsLoading(false);
       onClose();
@@ -30,7 +56,9 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Mock signup delay
+    console.log("Signup Name:", form.signupName);
+    console.log("Signup Email:", form.signupEmail);
+    console.log("Signup Password:", form.signupPassword);
     setTimeout(() => {
       setIsLoading(false);
       onClose();
@@ -62,15 +90,18 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
           </TabsList>
 
+          {/* Login Tab */}
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email-login">Email</Label>
+                <Label htmlFor="loginEmail">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="email-login"
+                    id="loginEmail"
                     placeholder="you@example.com"
+                    value={form.loginEmail}
+                    onChange={handleChange}
                     disabled={isLoading}
                     className="pl-8"
                     required
@@ -79,7 +110,7 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <Label htmlFor="password-login">Password</Label>
+                  <Label htmlFor="loginPassword">Password</Label>
                   <Button
                     variant="link"
                     size="sm"
@@ -92,9 +123,11 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
                 <div className="relative">
                   <Lock className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="password-login"
+                    id="loginPassword"
                     type="password"
                     placeholder="••••••••"
+                    value={form.loginPassword}
+                    onChange={handleChange}
                     disabled={isLoading}
                     className="pl-8"
                     required
@@ -102,11 +135,7 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
 
@@ -129,25 +158,28 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
               >
                 Continue with Google
               </Button>
-              
+
               <div className="text-center mt-4 text-sm text-muted-foreground">
                 <div className="flex justify-center items-center gap-1 text-xs">
-                  <Lock className="h-3 w-3" /> 
+                  <Lock className="h-3 w-3" />
                   <span>SSL Encrypted</span>
                 </div>
               </div>
             </form>
           </TabsContent>
 
+          {/* Signup Tab */}
           <TabsContent value="signup">
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="signupName">Full Name</Label>
                 <div className="relative">
                   <User className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="name"
+                    id="signupName"
                     placeholder="John Doe"
+                    value={form.signupName}
+                    onChange={handleChange}
                     disabled={isLoading}
                     className="pl-8"
                     required
@@ -155,13 +187,15 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email-signup">Email</Label>
+                <Label htmlFor="signupEmail">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="email-signup"
+                    id="signupEmail"
                     placeholder="you@example.com"
                     type="email"
+                    value={form.signupEmail}
+                    onChange={handleChange}
                     disabled={isLoading}
                     className="pl-8"
                     required
@@ -169,29 +203,26 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password-signup">Password</Label>
+                <Label htmlFor="signupPassword">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="password-signup"
+                    id="signupPassword"
                     type="password"
                     placeholder="••••••••"
+                    value={form.signupPassword}
+                    onChange={handleChange}
                     disabled={isLoading}
                     className="pl-8"
                     required
                   />
                 </div>
-                {/* Password strength meter */}
                 <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                   <div className="h-full w-2/5 bg-primary rounded-full" />
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating Account..." : "Sign Up"}
               </Button>
 
@@ -217,7 +248,7 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
 
               <div className="text-center mt-4 flex flex-col gap-1">
                 <div className="flex justify-center items-center gap-1 text-xs">
-                  <Lock className="h-3 w-3" /> 
+                  <Lock className="h-3 w-3" />
                   <span>SSL Encrypted</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
