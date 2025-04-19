@@ -299,29 +299,34 @@ const ListItem = () => {
     try {
       setIsSubmitting(true);
       const user = auth.currentUser;
-      if (!user) throw new Error("You must be logged in");
+      if (!user) throw new Error("Authentication required");
 
-      await addDoc(collection(db, "listings"), {
-        ...values,
-        price: Number(values.price),
-        images,
+      const listingData = {
+        title: String(values.title),
+        description: String(values.description),
+        category: String(values.category),
+        price: Number(values.price) || 0,
+        location: String(values.location),
+        images: Array.isArray(images) ? images : [],
         userId: user.uid,
         status: "available",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-      });
+      };
 
-      toast({
-        title: "Success!",
-        description: "Item listed successfully",
-      });
+      const docRef = await addDoc(collection(db, "listings"), listingData);
+      console.log("Document written with ID: ", docRef.id);
+
+      toast({ title: "Success!", description: "Item listed successfully" });
       form.reset();
       setImages([]);
+
     } catch (error) {
+      console.error("Firestore error details:", error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to list item",
-        variant: "destructive",
+        title: "Submission Error",
+        description: error.message || "Failed to save listing",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
