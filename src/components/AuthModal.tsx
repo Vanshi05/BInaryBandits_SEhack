@@ -53,17 +53,38 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
     }, 1500);
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    console.log("Signup Name:", form.signupName);
-    console.log("Signup Email:", form.signupEmail);
-    console.log("Signup Password:", form.signupPassword);
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.signupName,
+          email: form.signupEmail,
+          password: form.signupPassword,
+        }),
+      });
+
+      console.log(response)
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+
+      console.log("Signup success:", data);
       onClose();
-    }, 1500);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
