@@ -1,5 +1,6 @@
 // src/components/owner-info.tsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/Backend/firebase";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,15 +17,16 @@ interface UserProfile {
 export const OwnerInfo = ({ userId }: { userId: string }) => {
   const [ownerData, setOwnerData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOwnerData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch from Firestore users collection
         const userDoc = await getDoc(doc(db, "users", userId));
-        
+
         if (userDoc.exists()) {
           setOwnerData(userDoc.data() as UserProfile);
         } else {
@@ -55,6 +57,10 @@ export const OwnerInfo = ({ userId }: { userId: string }) => {
       .map((n) => n[0])
       .join("")
       .toUpperCase();
+  };
+
+  const handleContactClick = () => {
+    navigate('/home');
   };
 
   if (loading) {
@@ -95,7 +101,11 @@ export const OwnerInfo = ({ userId }: { userId: string }) => {
           </div>
         )}
 
-        <Button variant="outline" className="w-full border-sage text-sage">
+        <Button 
+          variant="outline" 
+          className="w-full border-sage text-sage"
+          onClick={handleContactClick}
+        >
           Contact Owner
         </Button>
 
