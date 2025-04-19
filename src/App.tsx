@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as Sonner } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -18,6 +17,12 @@ import AadharVerification from "./pages/AadharVerification"
 import HomePage from './components/HomePage'
 import { Register } from "./pages/Register"
 
+const App = () => {
+  // In a real app, you'd get these from your auth system
+  const demoUser = {
+    id: 'user123',
+    name: 'Demo User'
+  };
 
 
 const queryClient = new QueryClient()
