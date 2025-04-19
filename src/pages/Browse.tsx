@@ -1,9 +1,21 @@
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ItemCard } from "@/components/item-card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
+=======
+import { useState, useEffect } from "react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { ItemCard } from "@/components/item-card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Slider } from "@/components/ui/slider"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import UserLocationMap from "@/components/UserLocationMap";
+>>>>>>> 00dd374a3d185e0ba814de958033854f2322402f
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -84,8 +96,28 @@ const Browse = () => {
       }
     };
 
+<<<<<<< HEAD
     fetchListings();
   }, []);
+=======
+  const items = [
+    // Tools & Equipment category (at least 3)
+    {
+      id: "tools-001",
+      title: "Professional Power Drill",
+      description: "High-quality power drill with adjustable settings and long battery life",
+      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158",
+      category: "Tools",
+      price: 15,
+      distance: 2.5,
+      rating: 4.5,
+      available: true,
+      coordinates: { lat: 37.7835, lng: -122.4256 },
+    },
+    // ... (rest of your items array remains exactly the same)
+    // (I've omitted the full list for brevity, but keep all your existing items)
+  ];
+>>>>>>> 00dd374a3d185e0ba814de958033854f2322402f
 
   // Get unique categories
   const categories = [...new Set(listings.map(item => item.category))];
@@ -281,13 +313,28 @@ const Browse = () => {
           </div>
         </div>
 
-        <div className="md:col-span-3">
+        <div className="md:col-span-3 space-y-6">
+          {/* Map Section */}
+          <div className="bg-background rounded-lg border overflow-hidden">
+            <UserLocationMap 
+              userLocation={userLocation} 
+              items={filteredItems} 
+            />
+          </div>
+
+          {/* Items Grid Section */}
           {filteredItems.length === 0 ? (
+<<<<<<< HEAD
             <div className="text-center py-12">
               <h3 className="font-semibold text-lg">No listings found</h3>
               <p className="text-muted-foreground mt-2">
                 Try adjusting your search or filters
               </p>
+=======
+            <div className="text-center py-12 bg-background rounded-lg border">
+              <h3 className="font-semibold text-lg">No items found</h3>
+              <p className="text-muted-foreground mt-2">Try adjusting your filters or search query</p>
+>>>>>>> 00dd374a3d185e0ba814de958033854f2322402f
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -18,6 +18,7 @@ import AadharVerification from "./pages/AadharVerification"
 import HomePage from './components/HomePage'
 
 
+
 const queryClient = new QueryClient()
 
 const App = () => (
