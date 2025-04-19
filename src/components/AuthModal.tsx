@@ -11,11 +11,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { emailSignIn, emailSignUp } from "@/Backend/firebase.ts"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Lock, Mail, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -33,6 +35,8 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
     signupEmail: "",
     signupPassword: "",
   });
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -42,49 +46,37 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
     }));
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    console.log("Login Email:", form.loginEmail);
-    console.log("Login Password:", form.loginPassword);
-    setTimeout(() => {
-      setIsLoading(false);
-      onClose();
-    }, 1500);
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.signupName,
-          email: form.signupEmail,
-          password: form.signupPassword,
-        }),
-      });
-
-      console.log(response)
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message);
-      }
-
-      console.log("Signup success:", data);
+      await emailSignIn(form.loginEmail, form.loginPassword);
       onClose();
+      navigate('/dashboard');
     } catch (err: any) {
-      alert(err.message);
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await emailSignUp(form.signupEmail, form.signupPassword);
+      onClose();
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -114,6 +106,11 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
           {/* Login Tab */}
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4">
+              {error && (
+                <div className="text-red-500 text-sm text-center">
+                  {error}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="loginEmail">Email</Label>
                 <div className="relative">
@@ -159,39 +156,17 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
-
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    OR
-                  </span>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={isLoading}
-              >
-                Continue with Google
-              </Button>
-
-              <div className="text-center mt-4 text-sm text-muted-foreground">
-                <div className="flex justify-center items-center gap-1 text-xs">
-                  <Lock className="h-3 w-3" />
-                  <span>SSL Encrypted</span>
-                </div>
-              </div>
             </form>
           </TabsContent>
 
           {/* Signup Tab */}
           <TabsContent value="signup">
             <form onSubmit={handleSignup} className="space-y-4">
+              {error && (
+                <div className="text-red-500 text-sm text-center">
+                  {error}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="signupName">Full Name</Label>
                 <div className="relative">
@@ -246,36 +221,6 @@ const AuthModal = ({ isOpen, onClose, initialTab }: AuthModalProps) => {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating Account..." : "Sign Up"}
               </Button>
-
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    OR
-                  </span>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={isLoading}
-              >
-                Continue with Google
-              </Button>
-
-              <div className="text-center mt-4 flex flex-col gap-1">
-                <div className="flex justify-center items-center gap-1 text-xs">
-                  <Lock className="h-3 w-3" />
-                  <span>SSL Encrypted</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  ✓ We never share your data
-                </div>
-              </div>
             </form>
           </TabsContent>
         </Tabs>

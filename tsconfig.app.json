@@ -26,5 +26,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "backend/models"]
+  "include": ["src", "src/Backend/models", "src/Backend/firebase.ts"]
 }
