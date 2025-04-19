@@ -1,3 +1,11 @@
+<<<<<<< HEAD
+import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ItemCard } from "@/components/item-card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+=======
 import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -6,35 +14,92 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import UserLocationMap from "@/components/UserLocationMap";
+>>>>>>> 00dd374a3d185e0ba814de958033854f2322402f
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu"
-import { Filter, MapPin, ChevronDown, ArrowUpAZ, ArrowDownAZ, LocateFixed } from "lucide-react"
-import { toast } from "@/hooks/use-toast"
+} from "@/components/ui/dropdown-menu";
+import { Filter, ChevronDown, ArrowUpAZ, ArrowDownAZ, LocateFixed } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/Backend/firebase";
+
+interface Listing {
+  id: string;
+  title: string;
+  description: string;
+  images: string[];
+  category: string;
+  price: number;
+  status: string;
+  coordinates?: { lat: number; lng: number };
+  createdAt?: any;
+  rating?: number;
+}
 
 const Browse = () => {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [priceRange, setPriceRange] = useState([0, 100])
-  const [maxDistance, setMaxDistance] = useState(50)
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [availableOnly, setAvailableOnly] = useState(false)
-  const [sortOrder, setSortOrder] = useState<"recommended" | "price-asc" | "price-desc" | "distance" | "rating">("recommended")
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
-  
-  const searchParams = new URLSearchParams(window.location.search);
-  const categoryFromURL = searchParams.get('category');
+  // State management
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [priceRange, setPriceRange] = useState([0, 100]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [availableOnly, setAvailableOnly] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"recommended" | "price-asc" | "price-desc">("recommended");
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
+  // Fetch all listings from Firestore
   useEffect(() => {
-    if (categoryFromURL) {
-      console.log("Category from URL:", categoryFromURL);
-      setSelectedCategories([categoryFromURL]);
-    }
-  }, [categoryFromURL]);
+    const fetchListings = async () => {
+      try {
+        console.log("[DEBUG] Starting to fetch listings...");
+        const querySnapshot = await getDocs(collection(db, "listings"));
+        console.log(`[DEBUG] Found ${querySnapshot.size} documents`);
+        
+        const listingsData = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log(`[DEBUG] Processing document ${doc.id}:`, data);
+          
+          // Ensure images is always an array with at least one item
+          const images = Array.isArray(data.images) && data.images.length > 0 
+            ? data.images 
+            : ["/placeholder.svg"];
+            
+          return {
+            id: doc.id,
+            title: data.title || "Untitled Listing",
+            description: data.description || "",
+            images: images,
+            category: data.category || "Other",
+            price: Number(data.price) || 0,
+            status: data.status || "available",
+            coordinates: data.coordinates || undefined,
+            rating: Number(data.rating) || 4.0,
+            createdAt: data.createdAt || new Date()
+          };
+        });
+        
+        console.log("[DEBUG] Final listings data:", listingsData);
+        setListings(listingsData);
+      } catch (error) {
+        console.error("[ERROR] Failed to fetch listings:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load listings",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
+<<<<<<< HEAD
+    fetchListings();
+  }, []);
+=======
   const items = [
     // Tools & Equipment category (at least 3)
     {
@@ -49,312 +114,43 @@ const Browse = () => {
       available: true,
       coordinates: { lat: 37.7835, lng: -122.4256 },
     },
-    {
-      id: "tools-002",
-      title: "Garden Tools Set",
-      description: "Complete set of gardening tools including spade, rake, and pruning shears",
-      image: "/placeholder.svg",
-      category: "Tools",
-      price: 20,
-      distance: 1.2,
-      rating: 4.4,
-      available: true,
-      coordinates: { lat: 37.7831, lng: -122.4165 },
-    },
-    {
-      id: "tools-003",
-      title: "Electric Chainsaw",
-      description: "Powerful electric chainsaw perfect for yard maintenance and tree trimming",
-      image: "/placeholder.svg",
-      category: "Tools",
-      price: 30,
-      distance: 3.8,
-      rating: 4.6,
-      available: true,
-      coordinates: { lat: 37.7845, lng: -122.4350 },
-    },
-    
-    // Electronics & Gadgets category (at least 3)
-    {
-      id: "camera-001",
-      title: "Professional DSLR Camera",
-      description: "Professional grade DSLR camera perfect for photography enthusiasts. Includes multiple lenses and a carrying case.",
-      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
-      category: "Electronics",
-      price: 45,
-      distance: 2.4,
-      rating: 4.9,
-      available: true,
-      coordinates: { lat: 37.7833, lng: -122.4167 },
-    },
-    {
-      id: "projector-001",
-      title: "HD Projector",
-      description: "High-definition projector perfect for movie nights and presentations",
-      image: "/placeholder.svg",
-      category: "Electronics",
-      price: 40,
-      distance: 1.5,
-      rating: 4.6,
-      available: true,
-      coordinates: { lat: 37.7648, lng: -122.4200 },
-    },
-    {
-      id: "electronics-001",
-      title: "Gaming Console",
-      description: "Latest gaming console with two controllers and popular games",
-      image: "/placeholder.svg",
-      category: "Electronics",
-      price: 35,
-      distance: 1.7,
-      rating: 4.8,
-      available: true,
-      coordinates: { lat: 37.7647, lng: -122.4201 },
-    },
-    {
-      id: "electronics-002",
-      title: "Bluetooth Speaker",
-      description: "Powerful wireless speaker with excellent sound quality and long battery life",
-      image: "/placeholder.svg",
-      category: "Electronics",
-      price: 25,
-      distance: 1.9,
-      rating: 4.7,
-      available: true,
-      coordinates: { lat: 37.7656, lng: -122.4215 },
-    },
-    
-    // Outdoor & Adventure category (at least 3)
-    {
-      id: "tent-001",
-      title: "Camping Tent",
-      description: "4-person camping tent, easy to set up and waterproof. Perfect for weekend getaways.",
-      image: "/placeholder.svg",
-      category: "Outdoor",
-      price: 35,
-      distance: 3.2,
-      rating: 4.7,
-      available: false,
-      coordinates: { lat: 37.7694, lng: -122.4862 },
-    },
-    {
-      id: "kayak-001",
-      title: "Two-Person Kayak",
-      description: "Stable and durable kayak, includes paddles and life vests",
-      image: "/placeholder.svg",
-      category: "Outdoor",
-      price: 50,
-      distance: 4.1,
-      rating: 4.8,
-      available: false,
-      coordinates: { lat: 37.8083, lng: -122.4156 },
-    },
-    {
-      id: "outdoor-001",
-      title: "Hiking Backpack",
-      description: "65L hiking backpack with rain cover. Perfect for multi-day treks.",
-      image: "/placeholder.svg",
-      category: "Outdoor",
-      price: 25,
-      distance: 3.0,
-      rating: 4.7,
-      available: true,
-      coordinates: { lat: 37.7692, lng: -122.4864 },
-    },
-    
-    // Books & Media category (at least 3)
-    {
-      id: "book-001",
-      title: "Book Collection",
-      description: "Collection of bestselling novels, perfect for a reading retreat",
-      image: "/placeholder.svg",
-      category: "Books & Media",
-      price: 10,
-      distance: 0.8,
-      rating: 4.3,
-      available: true, 
-      coordinates: { lat: 37.7691, lng: -122.4449 },
-    },
-    {
-      id: "book-002",
-      title: "Film Collection",
-      description: "Classic movie collection with over 50 timeless films on Blu-ray",
-      image: "/placeholder.svg",
-      category: "Books & Media",
-      price: 15,
-      distance: 1.5,
-      rating: 4.5,
-      available: true,
-      coordinates: { lat: 37.7695, lng: -122.4460 },
-    },
-    {
-      id: "book-003",
-      title: "Vinyl Record Collection",
-      description: "Curated collection of vintage vinyl records from the 60s and 70s",
-      image: "/placeholder.svg",
-      category: "Books & Media",
-      price: 25,
-      distance: 2.2,
-      rating: 4.8,
-      available: true,
-      coordinates: { lat: 37.7699, lng: -122.4445 },
-    },
-    
-    // Musical Instruments category (at least 3)
-    {
-      id: "guitar-001",
-      title: "Electric Guitar",
-      description: "Fender Stratocaster with amp and accessories. Perfect for aspiring musicians.",
-      image: "/placeholder.svg",
-      category: "Musical Instruments",
-      price: 40,
-      distance: 2.8,
-      rating: 4.6,
-      available: true,
-      coordinates: { lat: 37.7751, lng: -122.4193 },
-    },
-    {
-      id: "music-001",
-      title: "Digital Piano",
-      description: "88-key weighted digital piano with stand and sustain pedal",
-      image: "/placeholder.svg",
-      category: "Musical Instruments",
-      price: 45,
-      distance: 3.1,
-      rating: 4.7,
-      available: true,
-      coordinates: { lat: 37.7758, lng: -122.4198 },
-    },
-    {
-      id: "music-002",
-      title: "Drum Kit",
-      description: "Complete acoustic drum set with cymbals and hardware",
-      image: "/placeholder.svg",
-      category: "Musical Instruments",
-      price: 50,
-      distance: 3.5,
-      rating: 4.5,
-      available: true,
-      coordinates: { lat: 37.7761, lng: -122.4201 },
-    },
-    
-    // Photography category (at least 3)
-    {
-      id: "camera-002",
-      title: "Photography Lighting Set",
-      description: "Professional studio lighting equipment for photography",
-      image: "/placeholder.svg",
-      category: "Photography",
-      price: 30,
-      distance: 3.5,
-      rating: 4.7,
-      available: true,
-      coordinates: { lat: 37.7609, lng: -122.4350 },
-    },
-    {
-      id: "photo-001",
-      title: "Mirrorless Camera",
-      description: "High-end mirrorless camera with 4K video capabilities",
-      image: "/placeholder.svg",
-      category: "Photography",
-      price: 50,
-      distance: 2.8,
-      rating: 4.9,
-      available: true,
-      coordinates: { lat: 37.7615, lng: -122.4355 },
-    },
-    {
-      id: "photo-002",
-      title: "Camera Lens Collection",
-      description: "Set of professional lenses including wide angle, portrait, and telephoto options",
-      image: "/placeholder.svg",
-      category: "Photography",
-      price: 45,
-      distance: 3.2,
-      rating: 4.8,
-      available: true,
-      coordinates: { lat: 37.7620, lng: -122.4360 },
-    },
-    
-    // Sports Equipment category (at least 3)
-    {
-      id: "bike-001",
-      title: "Mountain Bike",
-      description: "High-quality mountain bike perfect for weekend adventures. Well-maintained with recent service.",
-      image: "/placeholder.svg",
-      category: "Sports",
-      price: 25,
-      distance: 1.8,
-      rating: 4.8,
-      available: true,
-      coordinates: { lat: 37.7749, lng: -122.4194 },
-    },
-    {
-      id: "sports-001",
-      title: "Tennis Racket Set",
-      description: "Professional tennis racket set with balls and carrying case.",
-      image: "/placeholder.svg",
-      category: "Sports",
-      price: 15,
-      distance: 2.1,
-      rating: 4.5,
-      available: true,
-      coordinates: { lat: 37.7834, lng: -122.4252 },
-    },
-    {
-      id: "sports-002",
-      title: "Golf Club Set",
-      description: "Complete set of golf clubs with bag, ideal for beginners and intermediate players",
-      image: "/placeholder.svg",
-      category: "Sports",
-      price: 35,
-      distance: 2.9,
-      rating: 4.6,
-      available: true,
-      coordinates: { lat: 37.7838, lng: -122.4258 },
-    },
-    
-    // Home & Garden category (at least 3)
-    {
-      id: "home-001",
-      title: "Pressure Washer",
-      description: "Powerful pressure washer perfect for cleaning driveways, decks, and exteriors",
-      image: "/placeholder.svg",
-      category: "Home & Garden",
-      price: 30,
-      distance: 1.4,
-      rating: 4.5,
-      available: true,
-      coordinates: { lat: 37.7826, lng: -122.4160 },
-    },
-    {
-      id: "home-002",
-      title: "Carpet Cleaner",
-      description: "Professional-grade carpet cleaner with upholstery attachments",
-      image: "/placeholder.svg",
-      category: "Home & Garden",
-      price: 25,
-      distance: 1.6,
-      rating: 4.4,
-      available: true,
-      coordinates: { lat: 37.7829, lng: -122.4163 },
-    },
-    {
-      id: "home-003",
-      title: "Outdoor Furniture Set",
-      description: "Elegant patio furniture set perfect for hosting garden parties",
-      image: "/placeholder.svg",
-      category: "Home & Garden",
-      price: 45,
-      distance: 2.0,
-      rating: 4.7,
-      available: true,
-      coordinates: { lat: 37.7833, lng: -122.4168 },
-    }
+    // ... (rest of your items array remains exactly the same)
+    // (I've omitted the full list for brevity, but keep all your existing items)
   ];
+>>>>>>> 00dd374a3d185e0ba814de958033854f2322402f
 
-  const categories = Array.from(new Set(items.map(item => item.category)))
+  // Get unique categories
+  const categories = [...new Set(listings.map(item => item.category))];
 
+  // Filter and sort listings
+  const filteredItems = listings
+    .filter(item => {
+      const searchMatch = searchQuery === "" || 
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const categoryMatch = selectedCategories.length === 0 || 
+        selectedCategories.includes(item.category);
+      
+      const priceMatch = item.price >= priceRange[0] && 
+        item.price <= priceRange[1];
+      
+      const availabilityMatch = !availableOnly || 
+        item.status === "available";
+      
+      return searchMatch && categoryMatch && priceMatch && availabilityMatch;
+    })
+    .sort((a, b) => {
+      if (sortOrder === "price-asc") return a.price - b.price;
+      if (sortOrder === "price-desc") return b.price - a.price;
+      // Default sort by newest first
+      const aTime = a.createdAt?.toMillis?.() || 0;
+      const bTime = b.createdAt?.toMillis?.() || 0;
+      return bTime - aTime;
+    });
+
+  // Get user location
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -362,94 +158,49 @@ const Browse = () => {
           setUserLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude
-          })
+          });
           toast({
             title: "Location Updated",
-            description: "Using your current location for distance calculation",
-          })
+            description: "Using your current location",
+          });
         },
-        () => {
+        (error) => {
           toast({
             title: "Location Error",
-            description: "Unable to access your location",
+            description: error.message,
             variant: "destructive",
-          })
+          });
         }
-      )
+      );
     } else {
       toast({
-        title: "Location Not Supported",
-        description: "Geolocation is not supported by your browser",
+        title: "Not Supported",
+        description: "Geolocation not supported by browser",
         variant: "destructive",
-      })
+      });
     }
-  }
-
-  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
-    const R = 3958.8;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lng2 - lng1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }
-
-  useEffect(() => {
-    if (userLocation) {
-      console.log("User location updated:", userLocation);
-    }
-  }, [userLocation]);
-
-  const filteredItems = items
-    .filter(item => 
-      (item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       item.category.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      (selectedCategories.length === 0 || selectedCategories.includes(item.category)) &&
-      (item.price >= priceRange[0] && item.price <= priceRange[1]) &&
-      (userLocation ? calculateDistance(userLocation.lat, userLocation.lng, item.coordinates.lat, item.coordinates.lng) <= maxDistance : item.distance <= maxDistance) &&
-      (!availableOnly || item.available)
-    )
-    .sort((a, b) => {
-      switch (sortOrder) {
-        case "price-asc":
-          return a.price - b.price;
-        case "price-desc":
-          return b.price - a.price;
-        case "distance":
-          if (userLocation) {
-            const distA = calculateDistance(userLocation.lat, userLocation.lng, a.coordinates.lat, a.coordinates.lng);
-            const distB = calculateDistance(userLocation.lat, userLocation.lng, b.coordinates.lat, b.coordinates.lng);
-            return distA - distB;
-          }
-          return a.distance - b.distance;
-        case "rating":
-          return b.rating - a.rating;
-        case "recommended":
-        default:
-          return b.rating - a.rating;
-      }
-    });
-
-  const toggleCategory = (category: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(category) 
-        ? prev.filter(c => c !== category) 
-        : [...prev, category]
-    );
   };
 
+  // Reset all filters
   const resetFilters = () => {
     setSearchQuery("");
     setPriceRange([0, 100]);
-    setMaxDistance(50);
     setSelectedCategories([]);
     setAvailableOnly(false);
     setSortOrder("recommended");
   };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="animate-pulse bg-gray-200 rounded-lg h-64" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -457,8 +208,7 @@ const Browse = () => {
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <div className="flex gap-2 flex-1">
             <Input
-              type="text"
-              placeholder="Search items..."
+              placeholder="Search listings..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1"
@@ -474,7 +224,7 @@ const Browse = () => {
               <Button variant="outline" className="flex items-center gap-2">
                 {sortOrder === "price-asc" ? <ArrowUpAZ className="h-4 w-4" /> : 
                  sortOrder === "price-desc" ? <ArrowDownAZ className="h-4 w-4" /> : null}
-                <span>Sort: {sortOrder.charAt(0).toUpperCase() + sortOrder.slice(1).replace('-', ' ')}</span>
+                <span>Sort: {sortOrder.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')}</span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -488,18 +238,12 @@ const Browse = () => {
               <DropdownMenuItem onClick={() => setSortOrder("price-desc")}>
                 Price: High to Low
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOrder("distance")}>
-                Distance
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOrder("rating")}>
-                Highest Rated
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <Button variant="outline" onClick={getCurrentLocation} className="flex items-center gap-2">
             <LocateFixed className="h-4 w-4" />
-            <span>Current Location</span>
+            <span>Location</span>
           </Button>
         </div>
       </div>
@@ -509,23 +253,28 @@ const Browse = () => {
           <div className="bg-background rounded-lg border p-4 sticky top-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="font-semibold text-lg">Filters</h2>
-              <Button variant="outline" size="sm" onClick={resetFilters}>Reset</Button>
+              <Button variant="outline" size="sm" onClick={resetFilters}>
+                Reset
+              </Button>
             </div>
 
             <div className="mb-6">
               <h3 className="font-medium mb-2">Categories</h3>
               <div className="space-y-2">
-                {Array.from(new Set(items.map(item => item.category))).map((category) => (
+                {categories.map(category => (
                   <div key={category} className="flex items-center">
-                    <Checkbox 
-                      id={`category-${category}`} 
-                      checked={selectedCategories.includes(category)} 
-                      onCheckedChange={() => toggleCategory(category)}
+                    <Checkbox
+                      id={`cat-${category}`}
+                      checked={selectedCategories.includes(category)}
+                      onCheckedChange={() => 
+                        setSelectedCategories(prev => 
+                          prev.includes(category) 
+                            ? prev.filter(c => c !== category) 
+                            : [...prev, category]
+                        )
+                      }
                     />
-                    <label 
-                      htmlFor={`category-${category}`} 
-                      className="ml-2 text-sm font-medium cursor-pointer"
-                    >
+                    <label htmlFor={`cat-${category}`} className="ml-2 text-sm font-medium">
                       {category}
                     </label>
                   </div>
@@ -534,9 +283,9 @@ const Browse = () => {
             </div>
 
             <div className="mb-6">
-              <h3 className="font-medium mb-2">Price Range ($ per day)</h3>
-              <Slider 
-                value={priceRange} 
+              <h3 className="font-medium mb-2">Price Range ($/day)</h3>
+              <Slider
+                value={priceRange}
                 min={0}
                 max={100}
                 step={5}
@@ -550,59 +299,55 @@ const Browse = () => {
             </div>
 
             <div className="mb-6">
-              <h3 className="font-medium mb-2">Distance (miles)</h3>
-              <Slider 
-                value={[maxDistance]} 
-                min={0}
-                max={50}
-                step={1}
-                onValueChange={(value) => setMaxDistance(value[0])}
-                className="my-4"
-              />
-              <div className="flex justify-between text-sm">
-                <span>0 mi</span>
-                <span>Within {maxDistance} miles</span>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="font-medium mb-2">Availability</h3>
               <div className="flex items-center">
-                <Checkbox 
-                  id="available-now" 
-                  checked={availableOnly} 
+                <Checkbox
+                  id="available-only"
+                  checked={availableOnly}
                   onCheckedChange={(checked) => setAvailableOnly(!!checked)}
                 />
-                <label htmlFor="available-now" className="ml-2 text-sm font-medium cursor-pointer">
-                  Available now
+                <label htmlFor="available-only" className="ml-2 text-sm font-medium">
+                  Available Only
                 </label>
               </div>
             </div>
-
-            <Button className="w-full">Apply Filters</Button>
           </div>
         </div>
 
-        <div className="md:col-span-3">
+        <div className="md:col-span-3 space-y-6">
+          {/* Map Section */}
+          <div className="bg-background rounded-lg border overflow-hidden">
+            <UserLocationMap 
+              userLocation={userLocation} 
+              items={filteredItems} 
+            />
+          </div>
+
+          {/* Items Grid Section */}
           {filteredItems.length === 0 ? (
+<<<<<<< HEAD
             <div className="text-center py-12">
+              <h3 className="font-semibold text-lg">No listings found</h3>
+              <p className="text-muted-foreground mt-2">
+                Try adjusting your search or filters
+              </p>
+=======
+            <div className="text-center py-12 bg-background rounded-lg border">
               <h3 className="font-semibold text-lg">No items found</h3>
               <p className="text-muted-foreground mt-2">Try adjusting your filters or search query</p>
+>>>>>>> 00dd374a3d185e0ba814de958033854f2322402f
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredItems.map((item) => (
-                <ItemCard 
+              {filteredItems.map(item => (
+                <ItemCard
                   key={item.id}
                   id={item.id}
                   title={item.title}
                   description={item.description}
-                  image={item.image}
+                  image={item.images[0]}
                   category={item.category}
                   price={item.price}
-                  distance={userLocation 
-                    ? `${calculateDistance(userLocation.lat, userLocation.lng, item.coordinates.lat, item.coordinates.lng).toFixed(1)} km` 
-                    : `${item.distance} km`}
+                  distance="N/A"
                   rating={item.rating}
                 />
               ))}
@@ -611,7 +356,7 @@ const Browse = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default Browse;

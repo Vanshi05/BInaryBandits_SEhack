@@ -1,7 +1,7 @@
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -9,13 +9,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/hooks/use-toast"
-import { ImageUpload } from "@/components/image-upload"
-import { useState } from "react"
-import { Image } from "lucide-react"
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
+import { ImageUpload } from "@/components/image-upload";
+import { useState, useEffect } from "react"; // Added useEffect
+import { Image } from "lucide-react";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "@/Backend/firebase";
 
 const listingSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -24,10 +26,11 @@ const listingSchema = z.object({
   price: z.string().min(1, "Please enter a price"),
   location: z.string().min(1, "Please enter your location"),
   images: z.array(z.string()).min(1, "Please upload at least one image")
-})
+});
 
 const ListItem = () => {
-  const [images, setImages] = useState<string[]>([])
+  const [images, setImages] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof listingSchema>>({
     resolver: zodResolver(listingSchema),
@@ -39,32 +42,70 @@ const ListItem = () => {
       location: "",
       images: []
     },
-  })
+  });
 
-  function onSubmit(values: z.infer<typeof listingSchema>) {
-    toast({
-      title: "Item Listed Successfully",
-      description: "Your item has been listed for rent.",
-    })
-    console.log(values)
-  }
+  // Fixed: Update form.images when images state changes
+  useEffect(() => {
+    form.setValue("images", images);
+  }, [images, form]);
 
   const handleImageUpload = (imageUrl: string) => {
-    setImages(prev => [...prev, imageUrl])
-    form.setValue('images', [...images, imageUrl])
+    setImages(prev => [...prev, imageUrl]);
+  };
+
+  const handleImageDelete = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  async function onSubmit(values: z.infer<typeof listingSchema>) {
+    try {
+      setIsSubmitting(true);
+      const user = auth.currentUser;
+      if (!user) throw new Error("Authentication required");
+
+      const listingData = {
+        title: String(values.title),
+        description: String(values.description),
+        category: String(values.category),
+        price: Number(values.price) || 0,
+        location: String(values.location),
+        images: Array.isArray(images) ? images : [],
+        userId: user.uid,
+        status: "available",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, "listings"), listingData);
+      console.log("Document written with ID: ", docRef.id);
+
+      toast({ title: "Success!", description: "Item listed successfully" });
+      form.reset();
+      setImages([]);
+
+    } catch (error) {
+      console.error("Firestore error details:", error);
+      toast({
+        title: "Submission Error",
+        description: error.message || "Failed to save listing",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">List Your Item</h1>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="images"
-              render={({ field }) => (
+              render={() => ( // Changed to render without field prop
                 <FormItem>
                   <FormLabel>Images</FormLabel>
                   <FormControl>
@@ -73,10 +114,17 @@ const ListItem = () => {
                         {images.map((img, index) => (
                           <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
                             <img src={img} alt={`Product image ${index + 1}`} className="object-cover w-full h-full" />
+                            <button
+                              type="button"
+                              onClick={() => handleImageDelete(index)}
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                            >
+                              ×
+                            </button>
                           </div>
                         ))}
                         {images.length < 4 && (
-                          <ImageUpload 
+                          <ImageUpload
                             onUpload={handleImageUpload}
                             className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors"
                           >
@@ -96,7 +144,7 @@ const ListItem = () => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="title"
@@ -110,7 +158,7 @@ const ListItem = () => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="description"
@@ -118,8 +166,8 @@ const ListItem = () => {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Describe your item" 
+                    <Textarea
+                      placeholder="Describe your item"
                       className="h-32"
                       {...field}
                     />
@@ -128,7 +176,7 @@ const ListItem = () => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="category"
@@ -142,7 +190,7 @@ const ListItem = () => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="price"
@@ -156,7 +204,7 @@ const ListItem = () => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="location"
@@ -171,12 +219,18 @@ const ListItem = () => {
               )}
             />
 
-            <Button type="submit" className="w-full">List Item</Button>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isSubmitting || images.length === 0}
+            >
+              {isSubmitting ? "Listing..." : "List Item"}
+            </Button>
           </form>
         </Form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ListItem
+export default ListItem;
