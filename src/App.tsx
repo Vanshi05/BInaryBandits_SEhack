@@ -15,15 +15,6 @@ import Impact from "./pages/Impact"
 import { Login } from "./pages/Login"
 import AadharVerification from "./pages/AadharVerification"
 import HomePage from './components/HomePage'
-import { Register } from "./pages/Register"
-
-const App = () => {
-  // In a real app, you'd get these from your auth system
-  const demoUser = {
-    id: 'user123',
-    name: 'Demo User'
-  };
-
 
 const queryClient = new QueryClient()
 
@@ -36,7 +27,6 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/homepage" element={<HomePage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/share" element={<ListItem />} />
