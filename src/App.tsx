@@ -14,8 +14,9 @@ import About from "./pages/About"
 import Impact from "./pages/Impact"
 import { Login } from "./pages/Login"
 import AadharVerification from "./pages/AadharVerification"
-import HomePage from './components/HomePage'
 import { Register } from "./pages/Register"
+import AlertsPage from "./pages/AlertsPage"
+
 
 const queryClient = new QueryClient()
 
@@ -27,9 +28,9 @@ const App = () => (
         <Sonner />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/homepage" element={<HomePage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/share" element={<ListItem />} />
           <Route path="/browse" element={<Browse />} />

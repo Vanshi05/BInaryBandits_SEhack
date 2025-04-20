@@ -14,13 +14,13 @@ import {
 import { ImageGallery } from "@/components/image-gallery";
 import { OwnerInfo } from "@/components/owner-info";
 import { doc, getDoc } from "firebase/firestore";
-import { db, rentalsCollection, serverTimestamp } from "@/Backend/firebase";
+import { db, rentalsCollection, messagesCollection, serverTimestamp } from "@/Backend/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { NavHeader } from "@/components/nav-header";
 import { addDoc, updateDoc } from "firebase/firestore";
 import { Label } from "@/components/ui/label";
 import { Timestamp } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Listing {
   id: string;
@@ -43,9 +43,10 @@ const ItemDetail = () => {
   const [error, setError] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>();
-  const [open, setOpen] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [message, setMessage] = useState("");
   const { user } = useAuth();
-  const navigator = useNavigate()
 
   // Fetch item data from Firestore
   useEffect(() => {
@@ -114,8 +115,8 @@ const ItemDetail = () => {
         listingId: itemData.id,
         renterId: user.uid,
         ownerId: itemData.userId,
-        startDate: Timestamp.fromDate(date), // Use imported Timestamp
-        endDate: Timestamp.fromDate(endDate), // Use imported Timestamp
+        startDate: Timestamp.fromDate(date),
+        endDate: Timestamp.fromDate(endDate),
         totalPrice,
         status: "confirmed",
         createdAt: serverTimestamp(),
@@ -128,13 +129,47 @@ const ItemDetail = () => {
         updatedAt: serverTimestamp()
       });
 
-      setOpen(false);
+      setBookingOpen(false);
       toast.success("Booking Confirmed");
-
     } catch (error) {
       console.error("Booking error:", error);
-    } finally {
-      navigator('/booking-confirmed')
+      toast.error("Failed to confirm booking");
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!user) {
+      toast.error("Please sign in to contact the owner");
+      return;
+    }
+
+    if (!itemData) {
+      toast.error("Listing information not available");
+      return;
+    }
+
+    if (!message.trim()) {
+      toast.error("Message cannot be empty");
+      return;
+    }
+
+    try {
+      await addDoc(messagesCollection, {
+        senderId: user.uid,
+        receiverId: itemData.userId,
+        listingId: itemData.id,
+        content: message,
+        status: "unread",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      setMessage("");
+      setContactOpen(false);
+      toast.success("Message sent successfully");
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
     }
   };
 
@@ -187,80 +222,114 @@ const ItemDetail = () => {
               {itemData.description || "No description provided"}
             </p>
 
-            {itemData.status === "available" ? (
-              <Dialog open={open} onOpenChange={setOpen}>
+            <div className="flex gap-4">
+              {itemData.status === "available" ? (
+                <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="w-full">Book Now</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Book Item</DialogTitle>
+                      <DialogDescription>
+                        Select your rental dates and confirm your booking.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Start Date</Label>
+                          <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            disabled={(date) => date < minSelectableDate}
+                            className="rounded-md border"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>End Date</Label>
+                          <Calendar
+                            mode="single"
+                            selected={endDate}
+                            onSelect={setEndDate}
+                            disabled={(date) => !date || date <= (date || new Date())}
+                            className="rounded-md border"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Daily rate:</span>
+                          <span>₹{itemData.price}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Duration:</span>
+                          <span>
+                            {date && endDate ?
+                              `${Math.ceil((endDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))} days` :
+                              "Select dates"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between font-medium">
+                          <span className="text-gray-700">Total:</span>
+                          <span className="text-sage font-semibold">
+                            {date && endDate ?
+                              `₹${Math.ceil((endDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)) * itemData.price}` :
+                              "₹0"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <Button
+                        className="w-full mt-2"
+                        onClick={handleConfirmBooking}
+                        disabled={!date || !endDate || !user}
+                      >
+                        {!user ? 'Sign in to book' : 'Confirm Booking'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              ) : (
+                <Button className="w-full" disabled>
+                  Currently Unavailable
+                </Button>
+              )}
+
+              <Dialog open={contactOpen} onOpenChange={setContactOpen}>
                 <DialogTrigger asChild>
-                  <Button className="w-full">Book Now</Button>
+                  <Button variant="outline" className="w-full">
+                    Contact Owner
+                  </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Book Item</DialogTitle>
+                    <DialogTitle>Contact Owner</DialogTitle>
                     <DialogDescription>
-                      Select your rental dates and confirm your booking.
+                      Send a message to the owner about: {itemData.title}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Start Date</Label>
-                        <Calendar
-                          mode="single"
-                          selected={date}
-                          onSelect={setDate}
-                          disabled={(date) => date < minSelectableDate}
-                          className="rounded-md border"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>End Date</Label>
-                        <Calendar
-                          mode="single"
-                          selected={endDate}
-                          onSelect={setEndDate}
-                          disabled={(date) => !date || date <= (date || new Date())}
-                          className="rounded-md border"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Daily rate:</span>
-                        <span>₹{itemData.price}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Duration:</span>
-                        <span>
-                          {date && endDate ?
-                            `${Math.ceil((endDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))} days` :
-                            "Select dates"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between font-medium">
-                        <span className="text-gray-700">Total:</span>
-                        <span className="text-sage font-semibold">
-                          {date && endDate ?
-                            `₹${Math.ceil((endDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)) * itemData.price}` :
-                            "₹0"}
-                        </span>
-                      </div>
-                    </div>
-
+                    <Textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Type your message here..."
+                      rows={5}
+                      className="w-full"
+                    />
                     <Button
-                      className="w-full mt-2"
-                      onClick={handleConfirmBooking}
-                      disabled={!date || !endDate || !user}
+                      onClick={handleSendMessage}
+                      disabled={!message.trim() || !user}
+                      className="w-full"
                     >
-                      {!user ? 'Sign in to book' : 'Confirm Booking'}
+                      {!user ? 'Sign in to message' : 'Send Message'}
                     </Button>
                   </div>
                 </DialogContent>
               </Dialog>
-            ) : (
-              <Button className="w-full" disabled>
-                Currently Unavailable
-              </Button>
-            )}
+            </div>
           </div>
         </div>
 

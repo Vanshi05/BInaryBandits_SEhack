@@ -1,9 +1,9 @@
 import { Button } from "./ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Menu, User } from "lucide-react";
+import { Search, Menu, User, Bell } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { auth } from "@/Backend/firebase";
-import { signOut } from "firebase/auth"; // Don't forget to import signOut
+import { signOut } from "firebase/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,10 +11,31 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db } from "@/Backend/firebase";
 
 export const NavHeader = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread messages count
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const q = query(
+      collection(db, "messages"),
+      where("receiverId", "==", user.uid),
+      where("status", "==", "unread")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setUnreadCount(snapshot.size);
+    });
+
+    return () => unsubscribe();
+  }, [user?.uid]);
 
   const handleSignOut = async () => {
     try {
@@ -27,7 +48,6 @@ export const NavHeader = () => {
 
   if (loading) return null;
 
-  // Get user initials for fallback avatar
   const getUserInitials = () => {
     if (!user?.displayName) return "U";
     return user.displayName
@@ -61,18 +81,33 @@ export const NavHeader = () => {
             <Search className="h-5 w-5" />
           </Button>
 
+          {/* Alerts/Notifications Button */}
+          {user && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-sage hover:text-navy hover:bg-sage/10 relative"
+              onClick={() => navigate("/alerts")}
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </Button>
+          )}
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="hover:bg-sage/10 gap-2">
-                  {/* User avatar with fallback */}
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.photoURL || undefined} />
                     <AvatarFallback className="bg-sage text-cream">
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
-                  {/* Show name if available, otherwise email prefix */}
                   <span className="hidden md:inline text-sage">
                     {user.displayName || user.email?.split('@')[0]}
                   </span>
@@ -82,6 +117,10 @@ export const NavHeader = () => {
                 <DropdownMenuItem onClick={() => navigate("/profile")}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/alerts")}>
+                  <Bell className="mr-2 h-4 w-4" />
+                  <span>Messages {unreadCount > 0 && `(${unreadCount})`}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
                   <span>Sign Out</span>
