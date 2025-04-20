@@ -25,40 +25,10 @@ interface UserLocationMapProps {
 }
 
 const UserLocationMap = ({ userLocation, items }: UserLocationMapProps) => {
-  if (!userLocation) return <div className="text-center py-8">Enable location to view map</div>;
+  if (false) return <div className="text-center py-8">Enable location to view map</div>;
 
   return (
-    <div style={{ height: "400px", width: "100%", borderRadius: "8px", marginBottom: "24px" }}>
-      <MapContainer
-        center={[userLocation.lat, userLocation.lng]}
-        zoom={13}
-        style={{ height: "100%", width: "100%", borderRadius: "8px" }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        {/* User Location Marker */}
-        <Marker position={[userLocation.lat, userLocation.lng]}>
-          <Popup>Your Location</Popup>
-        </Marker>
-
-        {/* Item Markers */}
-        {items.map((item) => (
-          <Marker 
-            key={item.id} 
-            position={[item.coordinates.lat, item.coordinates.lng]}
-          >
-            <Popup>
-              <strong>{item.title}</strong>
-              <br />
-              {item.available ? "Available" : "Unavailable"}
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
-    </div>
+    <></>
   );
 };
 
