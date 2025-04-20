@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
 import { Share2, Search, Calendar, Star } from "lucide-react"
+import { NavHeader } from "@/components/nav-header";
 
 const steps = [
   {
@@ -30,6 +31,8 @@ const steps = [
 
 const HowItWorks = () => {
   return (
+    <div>
+     <NavHeader/>
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-3xl mx-auto text-center mb-12">
         <h1 className="text-4xl font-bold mb-4">How ShareForward Works</h1>
@@ -42,10 +45,10 @@ const HowItWorks = () => {
         <Steps items={steps} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 ">
         <Card>
-          <CardContent className="p-6">
-            <h3 className="text-xl font-semibold mb-4">For Item Owners</h3>
+          <CardContent className="p-6 bg-white rounded-xl">
+            <h3 className="text-xl font-semibold mb-4 ">For Item Owners</h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-2">
                 • Turn unused items into income
@@ -64,7 +67,7 @@ const HowItWorks = () => {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 bg-white rounded-xl">
             <h3 className="text-xl font-semibold mb-4">For Borrowers</h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-2">
@@ -95,6 +98,7 @@ const HowItWorks = () => {
           </Button>
         </div>
       </div>
+    </div>
     </div>
   )
 }

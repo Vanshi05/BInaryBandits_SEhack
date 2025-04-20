@@ -1,4 +1,4 @@
-import { ItemCard } from "@/components/item-card";
+import { ItemCard } from "@/components/item-card_listing.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfile } from "@/components/dashboard/UserProfile";
 import { TrustScoreCard } from "@/components/dashboard/TrustScoreCard";

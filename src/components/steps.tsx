@@ -13,9 +13,9 @@ interface StepsProps {
 
 export const Steps = ({ items }: StepsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 ">
       {items.map((step, index) => (
-        <div key={index} className="text-center">
+        <div key={index} className="text-center border border-gray-200 rounded-lg p-6 transition-all hover:border-primary hover:shadow-sm">
           <div className="relative mb-4">
             <div className="w-12 h-12 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
               <step.icon className="w-6 h-6 text-primary" />
