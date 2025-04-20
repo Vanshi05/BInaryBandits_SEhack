@@ -17,41 +17,33 @@ import AadharVerification from "./pages/AadharVerification"
 import HomePage from './components/HomePage'
 import { Register } from "./pages/Register"
 
-const App = () => {
-  // In a real app, you'd get these from your auth system
-  const demoUser = {
-    id: 'user123',
-    name: 'Demo User'
-  };
+const queryClient = new QueryClient()
 
+const App = () => (
+  <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/homepage" element={<HomePage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/share" element={<ListItem />} />
+          <Route path="/browse" element={<Browse />} />
+          <Route path="/item/:id" element={<ItemDetail />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/impact" element={<Impact />} />
+          <Route path="/profile" element={<Dashboard />} />
+          <Route path="/aadhar-verification" element={<AadharVerification />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </BrowserRouter>
+)
 
-  const queryClient = new QueryClient()
-
-  const App = () => (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/homepage" element={<HomePage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/share" element={<ListItem />} />
-            <Route path="/browse" element={<Browse />} />
-            <Route path="/item/:id" element={<ItemDetail />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/impact" element={<Impact />} />
-            <Route path="/profile" element={<Dashboard />} />
-            <Route path="/aadhar-verification" element={<AadharVerification />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
-  )
-}
 export default App

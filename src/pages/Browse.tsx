@@ -16,8 +16,9 @@ import {
 import { Filter, ChevronDown, ArrowUpAZ, ArrowDownAZ, LocateFixed } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/Backend/firebase";
+import { db, auth } from "@/Backend/firebase";
 import { NavHeader } from "@/components/nav-header";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface Listing {
   id: string;
@@ -27,6 +28,7 @@ interface Listing {
   category: string;
   price: number;
   status: string;
+  userId: string;
   coordinates?: { lat: number; lng: number };
   createdAt?: any;
   rating?: number;
@@ -44,32 +46,36 @@ const Browse = () => {
   const [availableOnly, setAvailableOnly] = useState(false);
   const [sortOrder, setSortOrder] = useState<"recommended" | "price-asc" | "price-desc">("recommended");
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Get current user on component mount
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUserId(user?.uid || null);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Fetch all listings from Firestore
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        console.log("[DEBUG] Starting to fetch listings...");
+        setLoading(true);
         const querySnapshot = await getDocs(collection(db, "listings"));
-        console.log(`[DEBUG] Found ${querySnapshot.size} documents`);
-
+        
         const listingsData = querySnapshot.docs.map(doc => {
           const data = doc.data();
-          console.log(`[DEBUG] Processing document ${doc.id}:`, data);
-
-          // Ensure images is always an array with at least one item
-          const images = Array.isArray(data.images) && data.images.length > 0
-            ? data.images
-            : ["/placeholder.svg"];
-
           return {
             id: doc.id,
             title: data.title || "Untitled Listing",
             description: data.description || "",
-            images: images,
+            images: Array.isArray(data.images) && data.images.length > 0 
+              ? data.images 
+              : ["/placeholder.svg"],
             category: data.category || "Other",
             price: Number(data.price) || 0,
             status: data.status || "available",
+            userId: data.userId || "",
             coordinates: data.coordinates || undefined,
             rating: Number(data.rating) || 4.0,
             createdAt: data.createdAt || new Date(),
@@ -78,10 +84,9 @@ const Browse = () => {
           };
         });
 
-        console.log("[DEBUG] Final listings data:", listingsData);
         setListings(listingsData);
       } catch (error) {
-        console.error("[ERROR] Failed to fetch listings:", error);
+        console.error("Failed to fetch listings:", error);
         toast({
           title: "Error",
           description: "Failed to load listings",
@@ -95,36 +100,39 @@ const Browse = () => {
     fetchListings();
   }, []);
 
-  // Get unique categories
-  const categories = [...new Set(listings.map(item => item.category))];
-
   // Filter and sort listings
   const filteredItems = listings
     .filter(item => {
-      const searchMatch = searchQuery === "" ||
+      // Skip items from the current user
+      if (currentUserId && item.userId === currentUserId) return false;
+      
+      const matchesSearch = searchQuery === "" ||
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.category.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const categoryMatch = selectedCategories.length === 0 ||
+      const matchesCategory = selectedCategories.length === 0 ||
         selectedCategories.includes(item.category);
 
-      const priceMatch = item.price >= priceRange[0] &&
+      const matchesPrice = item.price >= priceRange[0] &&
         item.price <= priceRange[1];
 
-      const availabilityMatch = !availableOnly ||
+      const matchesAvailability = !availableOnly ||
         item.status === "available";
 
-      return searchMatch && categoryMatch && priceMatch && availabilityMatch;
+      return matchesSearch && matchesCategory && matchesPrice && matchesAvailability;
     })
     .sort((a, b) => {
       if (sortOrder === "price-asc") return a.price - b.price;
       if (sortOrder === "price-desc") return b.price - a.price;
       // Default sort by newest first
-      const aTime = a.createdAt?.toMillis?.() || 0;
-      const bTime = b.createdAt?.toMillis?.() || 0;
+      const aTime = a.createdAt?.toMillis?.() || new Date(a.createdAt).getTime() || 0;
+      const bTime = b.createdAt?.toMillis?.() || new Date(b.createdAt).getTime() || 0;
       return bTime - aTime;
     });
+
+  // Get unique categories
+  const categories = [...new Set(listings.map(item => item.category))];
 
   // Get user location
   const getCurrentLocation = () => {
@@ -337,7 +345,7 @@ const Browse = () => {
   );
 };
 
-// Add the missing distance calculation function
+// Helper function to calculate distance between coordinates
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371; // Earth's radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180;

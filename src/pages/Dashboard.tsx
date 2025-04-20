@@ -1,93 +1,115 @@
-import { ItemCard } from "@/components/item-card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { UserProfile } from "@/components/dashboard/UserProfile"
-import { TrustScoreCard } from "@/components/dashboard/TrustScoreCard"
-import { SustainabilityImpact } from "@/components/dashboard/SustainabilityImpact"
-import { useEffect, useState } from "react"
-import { collection, query, where, getDocs } from "firebase/firestore"
-import { auth, db } from "@/Backend/firebase"
-import { useAuthState } from "react-firebase-hooks/auth"
-import { NavHeader } from "@/components/nav-header"
+import { ItemCard } from "@/components/item-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserProfile } from "@/components/dashboard/UserProfile";
+import { TrustScoreCard } from "@/components/dashboard/TrustScoreCard";
+import { SustainabilityImpact } from "@/components/dashboard/SustainabilityImpact";
+import { useEffect, useState } from "react";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from "@/Backend/firebase";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { NavHeader } from "@/components/nav-header";
 
 interface Listing {
-  id: string
-  title: string
-  description: string
-  category: string
-  price: number
-  location: string
-  images: string[]
-  status: string
-  createdAt: any
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  location: string;
+  images: string[];
+  status: "available" | "rented" | "unavailable";
+  userId: string;
+  createdAt: any;
+  updatedAt: any;
+}
+
+interface Rental {
+  id: string;
+  listingId: string;
+  renterId: string;
+  ownerId: string;
+  startDate: string;
+  endDate: string;
+  totalPrice: number;
+  status: "pending" | "active" | "completed" | "cancelled";
+  createdAt: any;
 }
 
 interface UserData {
-  displayName: string
-  email: string
-  photoURL?: string
+  displayName: string;
+  email: string;
+  photoURL?: string;
   metadata: {
-    creationTime?: string
-  }
-  // Add any additional user fields you store in Firestore
+    creationTime?: string;
+  };
 }
 
 const Dashboard = () => {
-  const [user] = useAuthState(auth)
-  const [userListings, setUserListings] = useState<Listing[]>([])
-  const [userRentals, setUserRentals] = useState<any[]>([]) // Define proper interface for rentals
-  const [userData, setUserData] = useState<UserData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user] = useAuthState(auth);
+  const [userListings, setUserListings] = useState<Listing[]>([]);
+  const [userRentals, setUserRentals] = useState<Rental[]>([]);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalEarnings: 0,
     totalRentals: 0,
     trustScore: 0,
     reviewsCount: 0
-  })
+  });
 
   // Fetch all user data
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!user) return
+      if (!user) return;
 
       try {
-        setLoading(true)
+        setLoading(true);
         
         // 1. Fetch user listings
-        const listingsRef = collection(db, "listings")
-        const listingsQuery = query(listingsRef, where("userId", "==", user.uid))
-        const listingsSnapshot = await getDocs(listingsQuery)
+        const listingsQuery = query(
+          collection(db, "listings"), 
+          where("userId", "==", user.uid)
+        );
+        const listingsSnapshot = await getDocs(listingsQuery);
 
-        const listings: Listing[] = []
-        listingsSnapshot.forEach((doc) => {
-          listings.push({
-            id: doc.id,
-            ...doc.data()
-          } as Listing)
-        })
-        setUserListings(listings)
+        const listings = listingsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Listing[];
+        setUserListings(listings);
 
-        // 2. Fetch user rentals (example - adjust based on your rentals structure)
-        const rentalsRef = collection(db, "rentals")
-        const rentalsQuery = query(rentalsRef, where("renterId", "==", user.uid))
-        const rentalsSnapshot = await getDocs(rentalsQuery)
+        // 2. Fetch user rentals (both as renter and owner)
+        const rentalsAsRenterQuery = query(
+          collection(db, "rentals"),
+          where("renterId", "==", user.uid)
+        );
+        const rentalsAsOwnerQuery = query(
+          collection(db, "rentals"),
+          where("ownerId", "==", user.uid)
+        );
 
-        const rentals: any[] = []
-        rentalsSnapshot.forEach((doc) => {
-          rentals.push({
-            id: doc.id,
-            ...doc.data()
-          })
-        })
-        setUserRentals(rentals)
+        const [renterSnapshot, ownerSnapshot] = await Promise.all([
+          getDocs(rentalsAsRenterQuery),
+          getDocs(rentalsAsOwnerQuery)
+        ]);
+
+        const rentals = [
+          ...renterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+          ...ownerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        ] as Rental[];
+        setUserRentals(rentals);
 
         // 3. Calculate statistics
-        const earnings = listings.reduce((sum, listing) => sum + (listing.price || 0), 0)
+        const activeListings = listings.filter(l => l.status === "available").length;
+        const rentedListings = listings.filter(l => l.status === "rented").length;
+        const completedRentals = rentals.filter(r => r.status === "completed").length;
+        
         setStats({
-          totalEarnings: earnings,
+          totalEarnings: completedRentals * 100, // Example calculation
           totalRentals: rentals.length,
           trustScore: calculateTrustScore(user, listings.length, rentals.length),
-          reviewsCount: 0 // You would fetch this from your reviews collection
-        })
+          reviewsCount: 0 // You would fetch this from reviews
+        });
 
         // 4. Set basic user data
         setUserData({
@@ -97,42 +119,53 @@ const Dashboard = () => {
           metadata: {
             creationTime: user.metadata.creationTime
           }
-        })
+        });
 
       } catch (error) {
-        console.error("Error fetching user data:", error)
+        console.error("Error fetching user data:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchUserData()
-  }, [user])
+    fetchUserData();
+  }, [user]);
 
   // Helper function to calculate trust score
   const calculateTrustScore = (user: any, listingsCount: number, rentalsCount: number) => {
-    let score = 50 // Base score
+    let score = 50; // Base score
     
     // Add points for verified email
-    if (user.emailVerified) score += 10
+    if (user.emailVerified) score += 10;
     
     // Add points for profile completeness
-    if (user.displayName) score += 10
-    if (user.photoURL) score += 5
+    if (user.displayName) score += 10;
+    if (user.photoURL) score += 5;
     
     // Add points for activity
-    score += Math.min(listingsCount, 10) // 1 point per listing up to 10
-    score += Math.min(rentalsCount, 10) // 1 point per rental up to 10
+    score += Math.min(listingsCount, 10); // 1 point per listing up to 10
+    score += Math.min(rentalsCount, 10); // 1 point per rental up to 10
     
-    return Math.min(score, 100) // Cap at 100
-  }
+    return Math.min(score, 100); // Cap at 100
+  };
 
   // Format member since date
   const formatMemberSince = (creationTime?: string) => {
-    if (!creationTime) return "Member"
-    const date = new Date(creationTime)
-    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-  }
+    if (!creationTime) return "Member";
+    const date = new Date(creationTime);
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
+
+  // Format rental status for display
+  const formatRentalStatus = (status: string) => {
+    switch (status) {
+      case "pending": return "Pending Approval";
+      case "active": return "Active Rental";
+      case "completed": return "Completed";
+      case "cancelled": return "Cancelled";
+      default: return status;
+    }
+  };
 
   return (
     <>
@@ -158,11 +191,11 @@ const Dashboard = () => {
               score={stats.trustScore}
               verifications={[
                 { type: "Email", verified: !!user?.emailVerified },
-                { type: "Phone", verified: false }, // You would check if phone is verified
-                { type: "ID", verified: false }, // You would check if ID is verified
-                { type: "Social Media", verified: false } // You would check social connections
+                { type: "Phone", verified: false },
+                { type: "ID", verified: false },
+                { type: "Social Media", verified: false }
               ]}
-              responseTime="< 30 mins" // You would calculate this from message response times
+              responseTime="< 30 mins"
               transactions={userRentals.length}
               memberSince={formatMemberSince(user?.metadata?.creationTime)}
             />
@@ -217,12 +250,12 @@ const Dashboard = () => {
                 {userRentals.map((rental) => (
                   <ItemCard
                     key={rental.id}
-                    id={rental.listingId} // Adjust based on your rental structure
-                    title={rental.itemTitle || "Rental Item"}
-                    description={`Rented from ${rental.startDate} to ${rental.endDate}`}
-                    image={rental.itemImage || "/placeholder.svg"}
-                    status={rental.status || "active"}
-                    buttonText={`Due: ${rental.endDate}`}
+                    id={rental.listingId}
+                    title={`Rental #${rental.id.slice(0, 6)}`}
+                    description={`Status: ${formatRentalStatus(rental.status)}`}
+                    image="/placeholder.svg" // You might want to fetch listing image
+                    status={rental.status}
+                    buttonText={`Due: ${new Date(rental.endDate).toLocaleDateString()}`}
                   />
                 ))}
               </div>
@@ -235,7 +268,7 @@ const Dashboard = () => {
         </Tabs>
       </div>
     </>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;

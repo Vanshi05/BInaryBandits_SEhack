@@ -60,7 +60,7 @@ export const OwnerInfo = ({ userId }: { userId: string }) => {
   };
 
   const handleContactClick = () => {
-    navigate('/home');
+    navigate('/homepage');
   };
 
   if (loading) {

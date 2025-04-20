@@ -13,15 +13,16 @@ import {
 } from "@/components/ui/dialog";
 import { ImageGallery } from "@/components/image-gallery";
 import { OwnerInfo } from "@/components/owner-info";
-import { doc, getDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/Backend/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { db, rentalsCollection, serverTimestamp } from "@/Backend/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { NavHeader } from "@/components/nav-header";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, updateDoc } from "firebase/firestore";
 import { Label } from "@/components/ui/label";
-import { updateDoc } from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 
-interface ItemData {
+interface Listing {
   id: string;
   title: string;
   description: string;
@@ -29,7 +30,7 @@ interface ItemData {
   category: string;
   location: string;
   images: string[];
-  status: string;
+  status: "available" | "rented" | "unavailable";
   userId: string;
   createdAt: any;
   updatedAt: any;
@@ -37,13 +38,14 @@ interface ItemData {
 
 const ItemDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [itemData, setItemData] = useState<ItemData | null>(null);
+  const [itemData, setItemData] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
+  const navigator = useNavigate()
 
   // Fetch item data from Firestore
   useEffect(() => {
@@ -95,42 +97,44 @@ const ItemDetail = () => {
 
   const handleConfirmBooking = async () => {
     try {
-      if (!user || !date || !endDate || !itemData) return;
+      if (!user || !date || !endDate || !itemData) {
+        throw new Error("Missing required booking information");
+      }
+
+      if (date >= endDate) {
+        throw new Error("End date must be after start date");
+      }
 
       // Calculate total price
       const days = Math.ceil((endDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
       const totalPrice = days * itemData.price;
 
-      // Create rental document
-      await addDoc(collection(db, "rentals"), {
+      // Create rental document with proper timestamp conversion
+      const rentalData = {
         listingId: itemData.id,
         renterId: user.uid,
         ownerId: itemData.userId,
-        startDate: date,
-        endDate: endDate,
-        totalPrice: totalPrice,
+        startDate: Timestamp.fromDate(date), // Use imported Timestamp
+        endDate: Timestamp.fromDate(endDate), // Use imported Timestamp
+        totalPrice,
         status: "confirmed",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-      });
+      };
 
-      // Update listing status
+      await addDoc(rentalsCollection, rentalData);
       await updateDoc(doc(db, "listings", itemData.id), {
         status: "rented",
         updatedAt: serverTimestamp()
       });
 
       setOpen(false);
-      toast("Booking Confirmed", {
-        description: `You've successfully booked ${itemData.title} for ${days} day(s)`
-      });
+      toast.success("Booking Confirmed");
 
     } catch (error) {
-      toast("Booking Failed", {
-        description: error instanceof Error ? error.message : "Could not complete booking",
-        variant: "destructive"
-      });
       console.error("Booking error:", error);
+    } finally {
+      navigator('/booking-confirmed')
     }
   };
 
@@ -139,11 +143,7 @@ const ItemDetail = () => {
   minSelectableDate.setHours(0, 0, 0, 0);
 
   if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p>Loading item details...</p>
-      </div>
-    );
+    return <div className="container mx-auto px-4 py-8 text-center">Loading...</div>;
   }
 
   if (error) {
@@ -164,13 +164,10 @@ const ItemDetail = () => {
       <NavHeader />
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <ImageGallery
-              images={itemData.images.length > 0 ? itemData.images : ["/placeholder.svg"]}
-              title={itemData.title}
-            />
-          </div>
+          {/* Image Gallery */}
+          <ImageGallery images={itemData.images} title={itemData.title} />
 
+          {/* Item Details */}
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold">{itemData.title}</h1>
@@ -179,14 +176,10 @@ const ItemDetail = () => {
                 <span className="px-2 py-1 text-xs rounded-full bg-sage/20 text-sage">
                   {itemData.category}
                 </span>
-                <span className="text-gray-500">
-                  {itemData.location}
-                </span>
+                <span className="text-gray-500">{itemData.location}</span>
               </div>
               {itemData.status !== "available" && (
-                <div className="mt-2 text-red-500">
-                  Currently unavailable
-                </div>
+                <div className="mt-2 text-red-500">Currently unavailable</div>
               )}
             </div>
 
@@ -199,7 +192,6 @@ const ItemDetail = () => {
                 <DialogTrigger asChild>
                   <Button className="w-full">Book Now</Button>
                 </DialogTrigger>
-                // Update the DialogContent section with these calendar components
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
                     <DialogTitle>Book Item</DialogTitle>
@@ -210,68 +202,23 @@ const ItemDetail = () => {
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-sm">Start Date</Label>
+                        <Label>Start Date</Label>
                         <Calendar
                           mode="single"
                           selected={date}
                           onSelect={setDate}
                           disabled={(date) => date < minSelectableDate}
-                          className="rounded-md border p-2"
-                          classNames={{
-                            months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                            month: "space-y-4",
-                            caption: "flex justify-center pt-1 relative items-center",
-                            caption_label: "text-sm font-medium",
-                            nav: "space-x-1 flex items-center",
-                            nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                            nav_button_previous: "absolute left-1",
-                            nav_button_next: "absolute right-1",
-                            table: "w-full border-collapse space-y-1",
-                            head_row: "flex",
-                            head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                            row: "flex w-full mt-2",
-                            cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
-                            day_selected: "bg-sage text-primary-foreground hover:bg-sage hover:text-primary-foreground focus:bg-sage focus:text-primary-foreground rounded-full",
-                            day_today: "bg-accent text-accent-foreground",
-                            day_outside: "text-muted-foreground opacity-50",
-                            day_disabled: "text-muted-foreground opacity-50",
-                            day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                            day_hidden: "invisible",
-                          }}
+                          className="rounded-md border"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm">End Date</Label>
+                        <Label>End Date</Label>
                         <Calendar
                           mode="single"
                           selected={endDate}
                           onSelect={setEndDate}
-                          disabled={(date) => !date || (date < (date || new Date()))}
-                          className="rounded-md border p-2"
-                          classNames={{
-                            // Same classNames as above for consistency
-                            months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                            month: "space-y-4",
-                            caption: "flex justify-center pt-1 relative items-center",
-                            caption_label: "text-sm font-medium",
-                            nav: "space-x-1 flex items-center",
-                            nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                            nav_button_previous: "absolute left-1",
-                            nav_button_next: "absolute right-1",
-                            table: "w-full border-collapse space-y-1",
-                            head_row: "flex",
-                            head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                            row: "flex w-full mt-2",
-                            cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
-                            day_selected: "bg-sage text-primary-foreground hover:bg-sage hover:text-primary-foreground focus:bg-sage focus:text-primary-foreground rounded-full",
-                            day_today: "bg-accent text-accent-foreground",
-                            day_outside: "text-muted-foreground opacity-50",
-                            day_disabled: "text-muted-foreground opacity-50",
-                            day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                            day_hidden: "invisible",
-                          }}
+                          disabled={(date) => !date || date <= (date || new Date())}
+                          className="rounded-md border"
                         />
                       </div>
                     </div>
@@ -285,7 +232,7 @@ const ItemDetail = () => {
                         <span className="text-gray-600">Duration:</span>
                         <span>
                           {date && endDate ?
-                            Math.ceil((endDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)) + " days" :
+                            `${Math.ceil((endDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))} days` :
                             "Select dates"}
                         </span>
                       </div>
